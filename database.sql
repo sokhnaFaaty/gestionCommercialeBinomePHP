@@ -53,6 +53,8 @@ CREATE TABLE commande (
     date DATE NOT NULL DEFAULT CURRENT_DATE,
     montant_total NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
     validee BOOLEAN NOT NULL DEFAULT FALSE,
+    -- Note libre saisie par le gestionnaire (« commande urgente », etc.).
+    description TEXT,
     client_id INT NOT NULL REFERENCES utilisateur(id) ON DELETE RESTRICT
 );
 

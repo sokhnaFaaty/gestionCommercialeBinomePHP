@@ -23,6 +23,17 @@ function path(string $controller, string $action, array $params = []): string {
     return $url;
 }
 
+/**
+ * Affichage d'un montant : 5000 devient « 5 000 F CFA ».
+ *
+ * Le franc CFA ne se divise pas en centimes : on n'affiche donc aucune
+ * décimale. Passer par cette fonction évite de réécrire le number_format()
+ * dans chaque vue, et garantit le même format partout.
+ */
+function formatPrix($montant): string {
+    return number_format((float) $montant, 0, ',', ' ') . ' F CFA';
+}
+
 function redirectTo(string $controller, string $action, array $params = []): void {
     $url = WEBROOT . "$controller/$action";
     if ($params) {

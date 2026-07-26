@@ -49,7 +49,7 @@
                             <?= htmlspecialchars($commande->client_prenom . ' ' . $commande->client_nom) ?>
                         </td>
                         <td class="px-4 py-3 tabular-nums"><?= htmlspecialchars($commande->date) ?></td>
-                        <td class="px-4 py-3 tabular-nums"><?= number_format((float) $commande->montant_total, 2, ',', ' ') ?> €</td>
+                        <td class="px-4 py-3 tabular-nums"><?= formatPrix($commande->montant_total) ?></td>
                         <td class="px-4 py-3">
                             <span class="rounded-full px-2 py-0.5 text-xs font-medium
                                          <?= $commande->validee

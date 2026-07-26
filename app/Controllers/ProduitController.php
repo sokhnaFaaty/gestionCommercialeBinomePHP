@@ -97,14 +97,14 @@ class ProduitController extends Controller
         }
 
         $id     = (int) ($_POST['id'] ?? 0);
-        $qtsock = (int) ($_POST['qtsock'] ?? -1);
+        $qte_stock = (int) ($_POST['qte_stock'] ?? -1);
 
-        if ($id <= 0 || $qtsock < 0) {
+        if ($id <= 0 || $qte_stock < 0) {
             $this->setFlash('erreur', 'Quantité invalide.');
             redirectTo('produit', 'index');
         }
 
-        $this->produitModel->updateStock($id, $qtsock);
+        $this->produitModel->updateStock($id, $qte_stock);
 
         $this->setFlash('succes', 'Le stock a été mis à jour.');
         redirectTo('produit', 'index');

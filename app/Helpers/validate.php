@@ -35,7 +35,9 @@ function validDataProduit(array $data): array
     if (empty($data["libelle"])) {
         $errors["libelle"] = "Veuillez remplir le libellé";
     }
-
+ if (empty($data["categorie_id"])) {
+        $errors["categorie_id"] = "Veuillez choisir une catégorie";
+    }
     if (empty($data["prix"])) {
         $errors["prix"] = "Veuillez remplir le prix";
     } elseif (!is_numeric($data["prix"]) || $data["prix"] <= 0) {
@@ -46,6 +48,17 @@ function validDataProduit(array $data): array
         $errors["quantite"] = "Veuillez remplir la quantité";
     } elseif (!is_numeric($data["quantite"]) || $data["quantite"] < 0) {
         $errors["quantite"] = "La quantité doit être valide";
+    }
+
+    return $errors;
+}
+
+function validDataCategorie(array $data): array
+{
+    $errors = [];
+
+    if (empty($data["libelle"])) {
+        $errors["libelle"] = "Veuillez remplir le libellé";
     }
 
     return $errors;

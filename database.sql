@@ -2,30 +2,24 @@
 -- SCRIPT DE CRÉATION DE LA BASE DE DONNÉES COMPLET (POSTGRESQL)
 -- =========================================================================
 
--- Suppression des tables si elles existent déjà (pour réinitialiser proprement)
-DROP TABLE IF EXISTS ligne_commande CASCADE;
+DROP TABLE IF EXISTS produit_commande CASCADE;
 DROP TABLE IF EXISTS paiement CASCADE;
 DROP TABLE IF EXISTS facture CASCADE;
 DROP TABLE IF EXISTS commande CASCADE;
 DROP TABLE IF EXISTS produit CASCADE;
+DROP TABLE IF EXISTS categorie CASCADE;
 DROP TABLE IF EXISTS utilisateur CASCADE;
 DROP TABLE IF EXISTS client CASCADE;
 
 DROP TYPE IF EXISTS type_statut_paiement CASCADE;
 DROP TYPE IF EXISTS type_statut_produit CASCADE;
 
--- 1. Création des énumérations (ENUMS)
+-- 1. Énumérations
 CREATE TYPE type_statut_paiement AS ENUM ('partiellement_payee', 'totalement_payee', 'non payee');
 CREATE TYPE type_statut_produit AS ENUM ('disponible', 'rupture');
 
--- 2. Création des tables (dans l'ordre strict des dépendances)
+-- 2. Tables (dans l'ordre des dépendances)
 
--- Table utilisateur (Doit être créée en premier)
--- Elle contient les DEUX types de comptes, distingués par la colonne role :
---   role = 'client'       -> passe des commandes, consulte les siennes
---   role = 'gestionnaire' -> accès à toute l'application
--- telephone est optionnel : un gestionnaire n'en a pas.
--- TODO (avant la soutenance) : hacher le mot de passe, il est en clair ici.
 CREATE TABLE utilisateur (
     id SERIAL PRIMARY KEY,
     nom VARCHAR(100) NOT NULL,
@@ -37,17 +31,21 @@ CREATE TABLE utilisateur (
         CHECK (role IN ('client', 'gestionnaire'))
 );
 
--- Table produit (Doit être créée en deuxième)
+CREATE TABLE categorie (
+    id SERIAL PRIMARY KEY,
+    libelle VARCHAR(100) NOT NULL UNIQUE
+);
+
 CREATE TABLE produit (
     id SERIAL PRIMARY KEY,
+    reference VARCHAR(50) NOT NULL UNIQUE,
     libelle VARCHAR(150) NOT NULL,
     qte_stock INT NOT NULL DEFAULT 0,
     prix_unitaire NUMERIC(10, 2) NOT NULL,
-    statut type_statut_produit NOT NULL DEFAULT 'disponible'
+    statut type_statut_produit NOT NULL DEFAULT 'disponible',
+    categorie_id INT NOT NULL REFERENCES categorie(id) ON DELETE RESTRICT
 );
 
--- Table commande (Dépend de utilisateur)
--- La colonne garde le nom client_id : elle pointe un utilisateur de role 'client'.
 CREATE TABLE commande (
     id SERIAL PRIMARY KEY,
     numero VARCHAR(50) NOT NULL UNIQUE,
@@ -57,7 +55,6 @@ CREATE TABLE commande (
     client_id INT NOT NULL REFERENCES utilisateur(id) ON DELETE RESTRICT
 );
 
--- Table facture (Dépend de commande)
 CREATE TABLE facture (
     id SERIAL PRIMARY KEY,
     numero VARCHAR(50) NOT NULL UNIQUE,
@@ -66,7 +63,6 @@ CREATE TABLE facture (
     commande_id INT NOT NULL UNIQUE REFERENCES commande(id) ON DELETE CASCADE
 );
 
--- Table paiement (Dépend de facture)
 CREATE TABLE paiement (
     id SERIAL PRIMARY KEY,
     numero VARCHAR(50) NOT NULL UNIQUE,
@@ -76,8 +72,9 @@ CREATE TABLE paiement (
     facture_id INT NOT NULL REFERENCES facture(id) ON DELETE CASCADE
 );
 
--- Table ligne_commande (Dépend de commande et produit)
-CREATE TABLE ligne_commande (
+-- produit_commande : table de jointure commande <-> produit (anciennement ligne_commande).
+-- Le prix est figé au moment de la commande.
+CREATE TABLE produit_commande (
     id SERIAL PRIMARY KEY,
     quantite INT NOT NULL CHECK (quantite > 0),
     prix NUMERIC(10, 2) NOT NULL,
@@ -86,25 +83,22 @@ CREATE TABLE ligne_commande (
 );
 
 -- =========================================================================
--- 3. JEU DE DONNÉES DE TEST AUTOMATIQUE (1, 2, 3...)
+-- 3. JEU DE DONNÉES DE TEST
 -- =========================================================================
 
--- Insertion d'un client (Prendra l'ID 1)
 INSERT INTO utilisateur (nom, prenom, telephone, email, password, role)
 VALUES ('Diop', 'Sokhna', '771234567', 'sokhna.diop@exemple.sn', 'passer123', 'client');
 
--- Insertion d'un gestionnaire (Prendra l'ID 2)
 INSERT INTO utilisateur (nom, prenom, telephone, email, password, role)
 VALUES ('Sow', 'Fatou', NULL, 'gestionnaire@exemple.sn', 'passer123', 'gestionnaire');
 
--- Insertion d'un produit (Prendra l'ID 1)
-INSERT INTO produit (libelle, qte_stock, prix_unitaire, statut) 
-VALUES ('Souris', 50, 5000.00, 'disponible');
+INSERT INTO categorie (libelle) VALUES ('Informatique');
 
--- Insertion d'une commande liée au client 1 (Prendra l'ID 1)
-INSERT INTO commande (numero, date, montant_total, validee, client_id) 
+INSERT INTO produit (reference, libelle, qte_stock, prix_unitaire, statut, categorie_id)
+VALUES ('PROD-000001', 'Souris', 50, 5000.00, 'disponible', 1);
+
+INSERT INTO commande (numero, date, montant_total, validee, client_id)
 VALUES ('C001', '2026-08-20', 20000.00, TRUE, 1);
 
--- Insertion d'une ligne de commande liée à la commande 1 et au produit 1 (Prendra l'ID 1)
-INSERT INTO ligne_commande (quantite, prix, commande_id, produit_id) 
+INSERT INTO produit_commande (quantite, prix, commande_id, produit_id)
 VALUES (10, 5000.00, 1, 1);

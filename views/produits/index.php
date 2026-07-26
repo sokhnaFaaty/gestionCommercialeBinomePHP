@@ -73,7 +73,7 @@
                         <td class="px-4 py-3 font-medium text-slate-900"><?= htmlspecialchars($produit->libelle) ?></td>
 <td class="px-4 py-3 text-slate-500"><?= htmlspecialchars($produit->categorie_libelle ?? '--') ?></td>
                         <td class="px-4 py-3 tabular-nums"><?= number_format((float) $produit->prix_unitaire, 2, ',', ' ') ?> €</td>
-                        <td class="px-4 py-3 tabular-nums"><?= (int) $produit->qtsock ?></td>
+                        <td class="px-4 py-3 tabular-nums"><?= (int) $produit->qte_stock ?></td>
                         <td class="px-4 py-3">
                             <span class="rounded-full px-2 py-0.5 text-xs font-medium
                                          <?= $produit->statut === 'disponible'
@@ -85,7 +85,7 @@
                         <td class="px-4 py-3 text-right">
                             <form method="post" action="<?= path('produit','updateStock') ?>" class="flex items-center justify-end gap-2">
                                 <input type="hidden" name="id" value="<?= (int) $produit->id ?>">
-                                <input type="number" name="qtsock" min="0" value="<?= (int) $produit->qtsock ?>"
+                                <input type="number" name="qte_stock" min="0" value="<?= (int) $produit->qte_stock ?>"
                                        class="w-20 rounded-md border border-slate-300 px-2 py-1 text-sm">
                                 <button type="submit" class="text-sm text-slate-500 hover:text-slate-900">
                                     Mettre à jour

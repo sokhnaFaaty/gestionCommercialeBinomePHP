@@ -59,6 +59,9 @@ function routes(): array
         'GET commande/create'     => [CommandeController::class, 'create'],
         'GET commande/show/{id}'  => [CommandeController::class, 'show'],
         'GET commande/edit/{id}'  => [CommandeController::class, 'edit'],
+        // Interrogées par le JavaScript du formulaire, réponse en JSON.
+        'GET commande/chercherClient'  => [CommandeController::class, 'chercherClient'],
+        'GET commande/chercherProduit' => [CommandeController::class, 'chercherProduit'],
         'POST commande/store'     => [CommandeController::class, 'store'],
         'POST commande/update'    => [CommandeController::class, 'update'],
         'POST commande/delete'    => [CommandeController::class, 'delete'],

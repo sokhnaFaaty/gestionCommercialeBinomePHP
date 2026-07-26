@@ -33,6 +33,12 @@ $retour = isset($retour) ? $retour : path('commande','index');
         <dt class="text-slate-500">Date</dt>
         <dd class="mt-1 font-medium text-slate-900"><?= htmlspecialchars($commande->date) ?></dd>
     </div>
+    <?php if (!empty($commande->description)): ?>
+        <div class="col-span-2 sm:col-span-3">
+            <dt class="text-slate-500">Description</dt>
+            <dd class="mt-1 text-slate-900"><?= htmlspecialchars($commande->description) ?></dd>
+        </div>
+    <?php endif; ?>
 </dl>
 
 <h2 class="mt-8 text-sm font-medium text-slate-700">Produits commandés</h2>
@@ -53,10 +59,10 @@ $retour = isset($retour) ? $retour : path('commande','index');
                 <tr>
                     <td class="px-4 py-3 font-mono text-xs text-slate-500"><?= htmlspecialchars($ligne->produit_reference) ?></td>
                     <td class="px-4 py-3 font-medium text-slate-900"><?= htmlspecialchars($ligne->produit_libelle) ?></td>
-                    <td class="px-4 py-3 tabular-nums"><?= number_format((float) $ligne->prix_unitaire, 2, ',', ' ') ?> €</td>
+                    <td class="px-4 py-3 tabular-nums"><?= formatPrix($ligne->prix_unitaire) ?></td>
                     <td class="px-4 py-3 tabular-nums"><?= (int) $ligne->quantite ?></td>
                     <td class="px-4 py-3 text-right tabular-nums">
-                        <?= number_format((float) $ligne->prix_unitaire * (int) $ligne->quantite, 2, ',', ' ') ?> €
+                        <?= formatPrix((float) $ligne->prix_unitaire * (int) $ligne->quantite) ?>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -65,7 +71,7 @@ $retour = isset($retour) ? $retour : path('commande','index');
             <tr class="border-t border-slate-200 bg-slate-50">
                 <td colspan="4" class="px-4 py-3 text-right font-medium text-slate-700">Total</td>
                 <td class="px-4 py-3 text-right font-semibold text-slate-900">
-                    <?= number_format((float) $commande->montant_total, 2, ',', ' ') ?> €
+                    <?= formatPrix($commande->montant_total) ?>
                 </td>
             </tr>
         </tfoot>

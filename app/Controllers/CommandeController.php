@@ -86,18 +86,26 @@ class CommandeController extends Controller
         }
 
         $donnees = [
-            'telephone' => trim($_POST['telephone'] ?? ''),
-            'lignes'    => $_POST['lignes'] ?? [],
+            'telephone'   => trim($_POST['telephone'] ?? ''),
+            'description' => trim($_POST['description'] ?? ''),
+            'lignes'      => $_POST['lignes'] ?? [],
         ];
 
         // 1. Contrôles de forme (champs vides, quantités non numériques...).
         $errors = validDataCommande($donnees);
 
         // 2. Contrôles qui demandent la base : le client et les produits existent-ils ?
+        //
+        // Le formulaire vérifie déjà tout cela en JavaScript, mais on refait le
+        // travail ici : le JavaScript peut être désactivé, ou la requête forgée
+        // à la main. Un contrôle côté navigateur est un confort, jamais une
+        // sécurité.
         $client         = $this->trouverClient($donnees['telephone'], $errors);
         $lignesValidees = $this->validerLignes($donnees['lignes'], $errors);
 
         if ($errors) {
+            $donnees['lignes'] = $this->enrichirLignes($donnees['lignes']);
+
             loadView('commandes/form', [
                 'title'    => 'Nouvelle commande',
                 'commande' => null,
@@ -107,7 +115,11 @@ class CommandeController extends Controller
             return;
         }
 
-        $commandeId = $this->commandeModel->createCommande((int) $client->id, $lignesValidees);
+        $commandeId = $this->commandeModel->createCommande(
+            (int) $client->id,
+            $lignesValidees,
+            $donnees['description']
+        );
         $commande   = $this->commandeModel->findCommande($commandeId);
 
         $this->setFlash('succes', "La commande {$commande->numero} a été créée.");
@@ -130,12 +142,15 @@ class CommandeController extends Controller
             redirectTo('commande', 'index');
         }
 
-        // On repasse les lignes existantes au format attendu par le formulaire.
+        // Le panier du formulaire attend, pour chaque ligne, de quoi l'afficher
+        // sans nouvelle requête : référence, libellé, prix et quantité.
         $lignes = [];
 
         foreach ($this->produitCommandeModel->findByCommande($id) as $ligne) {
             $lignes[] = [
                 'reference' => $ligne->produit_reference,
+                'libelle'   => $ligne->produit_libelle,
+                'prix'      => (float) $ligne->prix_unitaire,
                 'quantite'  => (int) $ligne->quantite,
             ];
         }
@@ -144,8 +159,9 @@ class CommandeController extends Controller
             'title'    => 'Modifier la commande ' . $commande->numero,
             'commande' => $commande,
             'donnees'  => [
-                'telephone' => $commande->client_telephone,
-                'lignes'    => $lignes,
+                'telephone'   => $commande->client_telephone,
+                'description' => $commande->description,
+                'lignes'      => $lignes,
             ],
             'errors'   => [],
         ]);
@@ -173,8 +189,9 @@ class CommandeController extends Controller
         }
 
         $donnees = [
-            'telephone' => trim($_POST['telephone'] ?? ''),
-            'lignes'    => $_POST['lignes'] ?? [],
+            'telephone'   => trim($_POST['telephone'] ?? ''),
+            'description' => trim($_POST['description'] ?? ''),
+            'lignes'      => $_POST['lignes'] ?? [],
         ];
 
         $errors = validDataCommande($donnees);
@@ -195,6 +212,8 @@ class CommandeController extends Controller
         $lignesValidees = $this->validerLignes($donnees['lignes'], $errors, $dejaReserve);
 
         if ($errors) {
+            $donnees['lignes'] = $this->enrichirLignes($donnees['lignes']);
+
             loadView('commandes/form', [
                 'title'    => 'Modifier la commande ' . $commande->numero,
                 'commande' => $commande,
@@ -204,7 +223,12 @@ class CommandeController extends Controller
             return;
         }
 
-        $this->commandeModel->updateCommande($id, (int) $client->id, $lignesValidees);
+        $this->commandeModel->updateCommande(
+            $id,
+            (int) $client->id,
+            $lignesValidees,
+            $donnees['description']
+        );
 
         $this->setFlash('succes', "La commande {$commande->numero} a été modifiée.");
         redirectTo('commande', 'index');
@@ -245,8 +269,105 @@ class CommandeController extends Controller
     }
 
     // ---------------------------------------------------------------------
+    // Recherches appelées par le JavaScript du formulaire
+    // ---------------------------------------------------------------------
+    // Ces deux méthodes ne renvoient pas une page HTML mais du JSON : c'est le
+    // script de la page qui les interroge quand on clique sur « OK », et qui
+    // remplit les champs avec la réponse. La page n'est jamais rechargée.
+
+    /**
+     * Cherche un client à partir de son numéro de téléphone.
+     */
+    public function chercherClient(): void
+    {
+        $telephone = trim($_GET['telephone'] ?? '');
+        $client    = $telephone !== '' ? $this->utilisateurModel->findByTelephone($telephone) : null;
+
+        if (!$client || $client->role !== UtilisateurModel::ROLE_CLIENT) {
+            $this->repondreJson([
+                'trouve'  => false,
+                'message' => "Aucun client ne correspond à ce numéro",
+            ]);
+        }
+
+        $this->repondreJson([
+            'trouve' => true,
+            'nom'    => $client->nom,
+            'prenom' => $client->prenom,
+        ]);
+    }
+
+    /**
+     * Cherche un produit à partir de sa référence.
+     */
+    public function chercherProduit(): void
+    {
+        $reference = trim($_GET['reference'] ?? '');
+        $produit   = $reference !== '' ? (new ProduitModel())->findByReference($reference) : null;
+
+        if (!$produit) {
+            $this->repondreJson([
+                'trouve'  => false,
+                'message' => "Aucun produit ne porte cette référence",
+            ]);
+        }
+
+        $this->repondreJson([
+            'trouve'    => true,
+            'reference' => $produit->reference,
+            'libelle'   => $produit->libelle,
+            'prix'      => (float) $produit->prix_unitaire,
+            'stock'     => (int) $produit->qte_stock,
+        ]);
+    }
+
+    // ---------------------------------------------------------------------
     // Méthodes internes (private = jamais joignables depuis une URL)
     // ---------------------------------------------------------------------
+
+    /**
+     * Envoie une réponse JSON et arrête là : pas de vue, pas de gabarit.
+     */
+    private function repondreJson(array $donnees): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($donnees, JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    /**
+     * Complète les lignes reçues du formulaire (référence + quantité) avec le
+     * libellé et le prix, pour que le panier puisse être réaffiché tel quel
+     * après une erreur de validation.
+     *
+     * Une référence inconnue est conservée : la personne doit revoir ce
+     * qu'elle a saisi, pas le voir disparaître.
+     */
+    private function enrichirLignes(array $lignesPost): array
+    {
+        $produitModel = new ProduitModel();
+        $lignes       = [];
+
+        foreach ($lignesPost as $ligne) {
+            $reference = trim($ligne['reference'] ?? '');
+            $quantite  = (int) ($ligne['quantite'] ?? 0);
+
+            if ($reference === '' && $quantite === 0) {
+                continue;
+            }
+
+            $produit = $produitModel->findByReference($reference);
+
+            $lignes[] = [
+                'reference' => $reference,
+                'libelle'   => $produit->libelle ?? '(référence inconnue)',
+                'prix'      => (float) ($produit->prix_unitaire ?? 0),
+                'quantite'  => $quantite,
+            ];
+        }
+
+        return $lignes;
+    }
 
     /**
      * Une commande facturée ne se modifie plus : la facture ne correspondrait

@@ -50,15 +50,15 @@ class ProduitModel extends Model
      */
     public function createProduit(array $data): bool
     {
-        $sql = "INSERT INTO {$this->table} (reference, libelle, qtsock, prix_unitaire, statut)
-                VALUES (:reference, :libelle, :qtsock, :prix_unitaire, :statut)";
+        $sql = "INSERT INTO {$this->table} (reference, libelle, qte_stock, prix_unitaire, statut)
+                VALUES (:reference, :libelle, :qte_stock, :prix_unitaire, :statut)";
 
         $stmt = $this->db->prepare($sql);
 
         return $stmt->execute([
             'reference'     => trim($data['reference']),
             'libelle'       => trim($data['libelle']),
-            'qtsock'        => (int) $data['quantite'],
+            'qte_stock'        => (int) $data['quantite'],
             'prix_unitaire' => (float) $data['prix'],
             'statut'        => $this->determinerStatut((int) $data['quantite']),
         ]);
@@ -68,21 +68,21 @@ class ProduitModel extends Model
      * Cas d'utilisation « mettre à jour la quantité en stock ».
      * Le statut est recalculé à chaque changement de stock.
      */
-    public function updateStock(int $id, int $qtsock): bool
+    public function updateStock(int $id, int $qte_stock): bool
     {
-        $sql = "UPDATE {$this->table} SET qtsock = :qtsock, statut = :statut WHERE id = :id";
+        $sql = "UPDATE {$this->table} SET qte_stock = :qte_stock, statut = :statut WHERE id = :id";
 
         $stmt = $this->db->prepare($sql);
 
         return $stmt->execute([
             'id'     => $id,
-            'qtsock' => $qtsock,
-            'statut' => $this->determinerStatut($qtsock),
+            'qte_stock' => $qte_stock,
+            'statut' => $this->determinerStatut($qte_stock),
         ]);
     }
 
-    private function determinerStatut(int $qtsock): string
+    private function determinerStatut(int $qte_stock): string
     {
-        return $qtsock > 0 ? self::STATUT_DISPONIBLE : self::STATUT_RUPTURE;
+        return $qte_stock > 0 ? self::STATUT_DISPONIBLE : self::STATUT_RUPTURE;
     }
 }

@@ -50,7 +50,7 @@ class CommandeModel extends Model
      * @param array $lignes Tableau de ['produit' => object produit, 'quantite' => int]
      *                      Déjà validés par le controller avant l'appel.
      */
-    public function createCommande(int $clientId, array $lignes): int
+    public function createCommande(int $clientId, array $lignes, string $description = ''): int
     {
         $this->db->beginTransaction();
 
@@ -71,12 +71,15 @@ class CommandeModel extends Model
             $numero     = 'CMD-' . str_pad((string) $commandeId, 6, '0', STR_PAD_LEFT);
 
             $this->executeUpdate(
-                "INSERT INTO {$this->table} (id, numero, date, montant_total, validee, client_id)
-                 VALUES (:id, :numero, CURRENT_DATE, 0, false, :client_id)",
+                "INSERT INTO {$this->table} (id, numero, date, montant_total, validee, description, client_id)
+                 VALUES (:id, :numero, CURRENT_DATE, 0, false, :description, :client_id)",
                 [
-                    'id'        => $commandeId,
-                    'numero'    => $numero,
-                    'client_id' => $clientId,
+                    'id'          => $commandeId,
+                    'numero'      => $numero,
+                    // Champ facultatif : on enregistre NULL plutôt qu'une chaîne
+                    // vide, c'est plus juste et plus simple à tester ensuite.
+                    'description' => $description !== '' ? $description : null,
+                    'client_id'   => $clientId,
                 ]
             );
 
@@ -131,7 +134,7 @@ class CommandeModel extends Model
      * @param array $lignes Tableau de ['produit' => object produit, 'quantite' => int]
      *                      Déjà validés par le controller avant l'appel.
      */
-    public function updateCommande(int $commandeId, int $clientId, array $lignes): bool
+    public function updateCommande(int $commandeId, int $clientId, array $lignes, string $description = ''): bool
     {
         $this->db->beginTransaction();
 
@@ -170,12 +173,13 @@ class CommandeModel extends Model
 
             $this->executeUpdate(
                 "UPDATE {$this->table}
-                 SET montant_total = :montant, client_id = :client_id
+                 SET montant_total = :montant, client_id = :client_id, description = :description
                  WHERE id = :id",
                 [
-                    'montant'   => $montantTotal,
-                    'client_id' => $clientId,
-                    'id'        => $commandeId,
+                    'montant'     => $montantTotal,
+                    'client_id'   => $clientId,
+                    'description' => $description !== '' ? $description : null,
+                    'id'          => $commandeId,
                 ]
             );
 

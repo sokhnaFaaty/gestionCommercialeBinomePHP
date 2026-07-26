@@ -98,6 +98,8 @@ class UtilisateurModel extends Model
             'prenom'    => trim($data['prenom']),
             'telephone' => trim($data['telephone']),
             'email'     => trim($data['email']),
+            // TODO (sécurité) : enregistrer password_hash($data['password'], PASSWORD_DEFAULT)
+            // plutôt que le mot de passe en clair. Voir AuthController::authenticate().
             'password'  => $data['password'],
             'role'      => self::ROLE_CLIENT, // jamais depuis le formulaire
         ]);

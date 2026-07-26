@@ -23,6 +23,28 @@ function validDataClient(array $data): array
     return $errors;
 }
 
+/**
+ * Contrôles de forme du formulaire de connexion.
+ *
+ * On ne vérifie ici que la présence des champs. Savoir si le couple
+ * email / mot de passe est correct demande la base : c'est le rôle de
+ * AuthController::authenticate().
+ */
+function validDataLogin(array $data): array
+{
+    $errors = [];
+
+    if (empty($data["email"])) {
+        $errors["email"] = "Veuillez saisir votre email";
+    }
+
+    if (empty($data["password"])) {
+        $errors["password"] = "Veuillez saisir votre mot de passe";
+    }
+
+    return $errors;
+}
+
 function validDataProduit(array $data): array
 {
 

@@ -22,6 +22,11 @@ class CommandeController extends Controller
 
     public function __construct()
     {
+        // Écran de gestion : réservé au gestionnaire connecté. Le routeur crée
+        // l'objet avant d'appeler l'action, donc les 7 méthodes sont protégées
+        // par cette seule ligne.
+        authGestionnaire();
+
         $this->commandeModel        = new CommandeModel();
         $this->produitCommandeModel = new ProduitCommandeModel();
         $this->utilisateurModel     = new UtilisateurModel();
@@ -353,9 +358,6 @@ class CommandeController extends Controller
 
         return $lignesValidees;
     }
-
-    // TODO (branche auth) : réserver ces écrans au gestionnaire avec
-    // auth() puis hasRole(UtilisateurModel::ROLE_GESTIONNAIRE).
 
     private function setFlash(string $type, string $message): void
     {

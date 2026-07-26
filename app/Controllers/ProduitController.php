@@ -10,6 +10,11 @@ class ProduitController extends Controller
 
     public function __construct()
     {
+        // Écran de gestion : réservé au gestionnaire connecté. Le routeur crée
+        // l'objet avant d'appeler l'action, donc toutes les méthodes du
+        // contrôleur sont protégées par cette seule ligne.
+        authGestionnaire();
+
         $this->produitModel = new ProduitModel();
     }
 
@@ -104,9 +109,6 @@ class ProduitController extends Controller
         $this->setFlash('succes', 'Le stock a été mis à jour.');
         redirectTo('produit', 'index');
     }
-
-    // TODO (branche auth) : réserver ces écrans au gestionnaire avec
-    // auth() puis hasRole(UtilisateurModel::ROLE_GESTIONNAIRE).
 
     private function setFlash(string $type, string $message): void
     {

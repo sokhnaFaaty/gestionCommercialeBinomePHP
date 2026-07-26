@@ -12,7 +12,11 @@
 // Documentation détaillée : docs/routage.md
 // =========================================================================
 
+use App\Controllers\AuthController;
+use App\Controllers\CategorieController;
 use App\Controllers\CommandeController;
+use App\Controllers\EspaceClientController;
+use App\Controllers\ProduitController;
 use App\Controllers\UtilisateurController;
 
 /**
@@ -35,6 +39,15 @@ use App\Controllers\UtilisateurController;
 function routes(): array
 {
     return [
+        // --- Connexion (les seules URL accessibles sans être connecté) ---
+        'GET auth/login'          => [AuthController::class, 'login'],
+        'POST auth/authenticate'  => [AuthController::class, 'authenticate'],
+        'POST auth/logout'        => [AuthController::class, 'logout'],
+
+        // --- Espace du client connecté (lecture seule) ---
+        'GET espace/index'        => [EspaceClientController::class, 'index'],
+        'GET espace/show/{id}'    => [EspaceClientController::class, 'show'],
+
         // --- Clients (gérés par UtilisateurController) ---
         'GET utilisateur/index'   => [UtilisateurController::class, 'index'],
         'GET utilisateur/create'  => [UtilisateurController::class, 'create'],
@@ -50,11 +63,23 @@ function routes(): array
         'POST commande/update'    => [CommandeController::class, 'update'],
         'POST commande/delete'    => [CommandeController::class, 'delete'],
 
+        // --- Produits ---
+        'GET produit/index'        => [ProduitController::class, 'index'],
+        'GET produit/create'       => [ProduitController::class, 'create'],
+        'POST produit/store'       => [ProduitController::class, 'store'],
+        'POST produit/updateStock' => [ProduitController::class, 'updateStock'],
+
+        // --- Catégories ---
+        'GET categorie/index'      => [CategorieController::class, 'index'],
+        'GET categorie/create'     => [CategorieController::class, 'create'],
+        'GET categorie/edit/{id}'  => [CategorieController::class, 'edit'],
+        'POST categorie/store'     => [CategorieController::class, 'store'],
+        'POST categorie/update'    => [CategorieController::class, 'update'],
+        'POST categorie/delete'    => [CategorieController::class, 'delete'],
+
         // --- À décommenter au fur et à mesure que les écrans sont écrits ---
         // (penser à ajouter le « use App\Controllers\XxxController; » en haut)
         //
-        // 'GET produit/index'    => [ProduitController::class, 'index'],
-        // 'GET categorie/index'  => [CategorieController::class, 'index'],
         // 'GET facture/index'    => [FactureController::class, 'index'],
         // 'GET paiement/index'   => [PaiementController::class, 'index'],
     ];
@@ -72,10 +97,14 @@ $url = isset($_GET['url'])
     : trim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '', '/');
 
 // Deux raccourcis, pour ne pas avoir à déclarer les mêmes routes deux fois :
-//   ''            (la racine du site) -> utilisateur/index
+//   ''            (la racine du site) -> auth/login
 //   'commande'    (sans action)       -> commande/index
+//
+// La racine mène à la connexion : c'est la porte d'entrée de l'application.
+// Si la personne est déjà connectée, AuthController::login() la renvoie
+// aussitôt vers l'accueil de son rôle.
 if ($url === '') {
-    $url = 'utilisateur/index';
+    $url = 'auth/login';
 } elseif (!str_contains($url, '/')) {
     $url .= '/index';
 }

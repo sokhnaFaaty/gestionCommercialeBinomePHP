@@ -16,6 +16,11 @@ class UtilisateurController extends Controller
 
     public function __construct()
     {
+        // Écran de gestion : réservé au gestionnaire connecté. Le routeur crée
+        // l'objet avant d'appeler l'action, donc toutes les méthodes du
+        // contrôleur sont protégées par cette seule ligne.
+        authGestionnaire();
+
         $this->utilisateurModel = new UtilisateurModel();
     }
 
@@ -135,9 +140,6 @@ class UtilisateurController extends Controller
         $this->setFlash('succes', "Le client {$client->prenom} {$client->nom} a été supprimé.");
         redirectTo('utilisateur', 'index');
     }
-
-    // TODO (branche auth) : réserver ces écrans au gestionnaire avec
-    // auth() puis hasRole(UtilisateurModel::ROLE_GESTIONNAIRE).
 
     private function setFlash(string $type, string $message): void
     {

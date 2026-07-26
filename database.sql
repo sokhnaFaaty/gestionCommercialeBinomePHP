@@ -20,11 +20,16 @@ CREATE TYPE type_statut_produit AS ENUM ('disponible', 'rupture');
 -- 2. Création des tables (dans l'ordre strict des dépendances)
 
 -- Table client (Doit être créée en premier)
+-- email / password / role servent à l'authentification (voir helpers auth() et hasRole()).
+-- TODO (branche auth) : le mot de passe est stocké en clair pour l'instant, à hacher.
 CREATE TABLE client (
     id SERIAL PRIMARY KEY,
     nom VARCHAR(100) NOT NULL,
     prenom VARCHAR(100) NOT NULL,
-    telephone VARCHAR(20) NOT NULL UNIQUE
+    telephone VARCHAR(20) NOT NULL UNIQUE,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'client'
 );
 
 -- Table produit (Doit être créée en deuxième)
@@ -79,8 +84,8 @@ CREATE TABLE ligne_commande (
 -- =========================================================================
 
 -- Insertion d'un client (Prendra l'ID 1)
-INSERT INTO client (nom, prenom, telephone) 
-VALUES ('Diop', 'Sokhna', '771234567');
+INSERT INTO client (nom, prenom, telephone, email, password, role)
+VALUES ('Diop', 'Sokhna', '771234567', 'sokhna.diop@exemple.sn', 'passer123', 'client');
 
 -- Insertion d'un produit (Prendra l'ID 1)
 INSERT INTO produit (libelle, qte_stock, prix_unitaire, statut) 

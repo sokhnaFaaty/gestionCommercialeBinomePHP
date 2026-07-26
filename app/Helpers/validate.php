@@ -53,6 +53,56 @@ function validDataProduit(array $data): array
     return $errors;
 }
 
+/**
+ * Contrôles de forme du formulaire de commande.
+ *
+ * $data attend :
+ *   'telephone' => string
+ *   'lignes'    => [ ['reference' => string, 'quantite' => string], ... ]
+ *
+ * L'existence du client et des produits est vérifiée dans le controller :
+ * elle demande la base de données.
+ */
+function validDataCommande(array $data): array
+{
+    $errors = [];
+
+    if (empty($data["telephone"])) {
+        $errors["telephone"] = "Veuillez saisir le téléphone du client";
+    }
+
+    // Le formulaire ajoute des lignes à la volée : celles restées entièrement
+    // vides sont simplement ignorées, elles ne sont pas des erreurs.
+    $lignesRemplies = 0;
+
+    foreach ($data["lignes"] ?? [] as $i => $ligne) {
+        $reference = trim($ligne["reference"] ?? '');
+        $quantite  = trim($ligne["quantite"] ?? '');
+
+        if ($reference === '' && $quantite === '') {
+            continue;
+        }
+
+        $lignesRemplies++;
+
+        if ($reference === '') {
+            $errors["ligne_{$i}_reference"] = "Veuillez saisir la référence";
+        }
+
+        if ($quantite === '') {
+            $errors["ligne_{$i}_quantite"] = "Veuillez saisir la quantité";
+        } elseif (!ctype_digit($quantite) || (int) $quantite < 1) {
+            $errors["ligne_{$i}_quantite"] = "La quantité doit être un entier supérieur à 0";
+        }
+    }
+
+    if ($lignesRemplies === 0) {
+        $errors["lignes"] = "Veuillez ajouter au moins un produit";
+    }
+
+    return $errors;
+}
+
 function validDataCategorie(array $data): array
 {
     $errors = [];

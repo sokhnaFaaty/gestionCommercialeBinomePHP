@@ -63,6 +63,10 @@
                                class="mr-4 text-sm text-slate-500 hover:text-slate-900">
                                 Détail
                             </a>
+                            <a href="<?= WEBROOT . 'commande/edit/' . (int) $commande->id ?>"
+                               class="mr-4 text-sm text-slate-500 hover:text-slate-900">
+                                Modifier
+                            </a>
                             <form method="post"
                                   action="<?= path('commande','delete') ?>"
                                   class="inline"

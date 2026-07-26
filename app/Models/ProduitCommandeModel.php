@@ -8,20 +8,25 @@ class ProduitCommandeModel extends Model
     protected $table = 'produit_commande';
 
     /**
-     * Lignes d'une commande donnée, avec le libellé et la référence du produit.
+     * Lignes d'une commande donnée, avec les informations du produit.
+     *
+     * La colonne s'appelle « prix » dans la table (c'est le prix figé au moment
+     * de la commande) : on la renomme en prix_unitaire, le nom utilisé dans les
+     * vues et dans le reste du code.
      */
     public function findByCommande(int $commandeId): array
     {
-        $sql = "SELECT pc.*, p.libelle AS produit_libelle, p.reference AS produit_reference
+        $sql = "SELECT pc.*,
+                       pc.prix     AS prix_unitaire,
+                       p.libelle   AS produit_libelle,
+                       p.reference AS produit_reference,
+                       p.qte_stock AS produit_qte_stock
                 FROM {$this->table} pc
                 JOIN produit p ON p.id = pc.produit_id
                 WHERE pc.commande_id = ?
                 ORDER BY pc.id";
 
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$commandeId]);
-
-        return $stmt->fetchAll();
+        return $this->executeSelect($sql, [$commandeId]);
     }
 
     /**
@@ -32,13 +37,24 @@ class ProduitCommandeModel extends Model
         $sql = "INSERT INTO {$this->table} (quantite, prix, commande_id, produit_id)
                 VALUES (:quantite, :prix, :commande_id, :produit_id)";
 
-        $stmt = $this->db->prepare($sql);
-
-        return $stmt->execute([
+        return $this->executeUpdate($sql, [
             'quantite'    => $quantite,
             'prix'        => $prix,
             'commande_id' => $commandeId,
             'produit_id'  => $produitId,
         ]);
+    }
+
+    /**
+     * Vide une commande de toutes ses lignes.
+     * Utilisé par la modification : les anciennes lignes sont remplacées par
+     * les nouvelles (voir CommandeModel::updateCommande()).
+     */
+    public function deleteByCommande(int $commandeId): bool
+    {
+        return $this->executeUpdate(
+            "DELETE FROM {$this->table} WHERE commande_id = ?",
+            [$commandeId]
+        );
     }
 }

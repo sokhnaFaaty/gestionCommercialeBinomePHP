@@ -1,15 +1,33 @@
 <?php
+// Ce formulaire sert deux fois : à créer une commande et à en modifier une.
+// C'est la variable $commande qui fait la différence : null = création.
+$estModification = isset($commande) && $commande !== null;
+
 $ancienTelephone = htmlspecialchars($donnees['telephone'] ?? '');
-$lignes = $donnees['lignes'] ?? [['reference' => '', 'quantite' => '']];
+
+// Au moins une ligne vide à l'ouverture, sinon le tableau serait vide.
+$lignes = !empty($donnees['lignes'])
+    ? $donnees['lignes']
+    : [['reference' => '', 'quantite' => '']];
 ?>
 
 <a href="<?= path('commande','index') ?>" class="text-sm text-slate-500 hover:text-slate-900">
     &larr; Retour à la liste
 </a>
 
-<h1 class="mt-4 text-xl font-semibold tracking-tight text-slate-900">Nouvelle commande</h1>
+<h1 class="mt-4 text-xl font-semibold tracking-tight text-slate-900">
+    <?= $estModification
+            ? 'Modifier la commande ' . htmlspecialchars($commande->numero)
+            : 'Nouvelle commande' ?>
+</h1>
 
-<form method="post" action="<?= path('commande','store') ?>" class="mt-8 max-w-2xl space-y-6">
+<form method="post"
+      action="<?= $estModification ? path('commande','update') : path('commande','store') ?>"
+      class="mt-8 max-w-2xl space-y-6">
+
+    <?php if ($estModification): ?>
+        <input type="hidden" name="id" value="<?= (int) $commande->id ?>">
+    <?php endif; ?>
 
     <div>
         <label for="telephone" class="block text-sm font-medium text-slate-700">Téléphone du client</label>
@@ -68,7 +86,7 @@ $lignes = $donnees['lignes'] ?? [['reference' => '', 'quantite' => '']];
     <div class="flex items-center gap-3 pt-2">
         <button type="submit"
                 class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
-            Créer la commande
+            <?= $estModification ? 'Enregistrer les modifications' : 'Créer la commande' ?>
         </button>
         <a href="<?= path('commande','index') ?>" class="text-sm text-slate-500 hover:text-slate-900">
             Annuler

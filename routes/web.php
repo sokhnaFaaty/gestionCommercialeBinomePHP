@@ -45,7 +45,9 @@ function routes(): array
         'GET commande/index'      => [CommandeController::class, 'index'],
         'GET commande/create'     => [CommandeController::class, 'create'],
         'GET commande/show/{id}'  => [CommandeController::class, 'show'],
+        'GET commande/edit/{id}'  => [CommandeController::class, 'edit'],
         'POST commande/store'     => [CommandeController::class, 'store'],
+        'POST commande/update'    => [CommandeController::class, 'update'],
         'POST commande/delete'    => [CommandeController::class, 'delete'],
 
         // --- À décommenter au fur et à mesure que les écrans sont écrits ---

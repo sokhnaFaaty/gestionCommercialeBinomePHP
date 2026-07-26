@@ -75,8 +75,15 @@ avant de chercher :
 
 | URL tapée      | URL réellement cherchée |
 | -------------- | ----------------------- |
-| `/`            | `utilisateur/index`     |
+| `/`            | `auth/login`            |
 | `/commande`    | `commande/index`        |
+
+### Route déclarée ≠ écran autorisé
+
+Le routeur répond à une seule question : « cette URL existe-t-elle ? ». Il ne
+décide pas *qui* a le droit de l'ouvrir. Ce contrôle-là se fait dans le
+constructeur des contrôleurs, avec `authGestionnaire()` ou `authClient()` —
+voir [`authentification.md`](authentification.md).
 
 ---
 

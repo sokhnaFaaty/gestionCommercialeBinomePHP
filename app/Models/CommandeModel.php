@@ -18,6 +18,22 @@ class CommandeModel extends Model
         return $this->executeSelect($sql);
     }
 
+    /**
+     * Commandes d'un seul client : c'est ce que voit le client connecté dans
+     * son espace. Le filtrage se fait ici, en SQL, et pas dans la vue : un
+     * client ne doit jamais recevoir les commandes des autres.
+     */
+    public function allCommandesByClient(int $clientId): array
+    {
+        $sql = "SELECT c.*, u.nom AS client_nom, u.prenom AS client_prenom
+                FROM {$this->table} c
+                JOIN utilisateur u ON u.id = c.client_id
+                WHERE c.client_id = ?
+                ORDER BY c.date DESC, c.id DESC";
+
+        return $this->executeSelect($sql, [$clientId]);
+    }
+
     public function findCommande(int $id)
     {
         $sql = "SELECT c.*, u.nom AS client_nom, u.prenom AS client_prenom, u.telephone AS client_telephone

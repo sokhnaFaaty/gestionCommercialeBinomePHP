@@ -87,6 +87,8 @@ CREATE TABLE produit_commande (
 -- 3. JEU DE DONNÉES DE TEST
 -- =========================================================================
 
+-- Comptes de test : mot de passe « passer123 » pour les deux.
+-- TODO (sécurité) : les mots de passe sont stockés en clair pour l'instant.
 INSERT INTO utilisateur (nom, prenom, telephone, email, password, role)
 VALUES ('Diop', 'Sokhna', '771234567', 'sokhna.diop@exemple.sn', 'passer123', 'client');
 

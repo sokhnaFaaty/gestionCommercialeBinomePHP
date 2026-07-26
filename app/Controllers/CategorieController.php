@@ -10,6 +10,11 @@ class CategorieController extends Controller
 
     public function __construct()
     {
+        // Écran de gestion : réservé au gestionnaire connecté. Le routeur crée
+        // l'objet avant d'appeler l'action, donc toutes les méthodes du
+        // contrôleur sont protégées par cette seule ligne.
+        authGestionnaire();
+
         $this->categorieModel = new CategorieModel();
     }
 
@@ -170,9 +175,6 @@ class CategorieController extends Controller
         $this->setFlash('succes', "La catégorie {$categorie->libelle} a été supprimée.");
         redirectTo('categorie', 'index');
     }
-
-    // TODO (branche auth) : réserver ces écrans au gestionnaire avec
-    // auth() puis hasRole(UtilisateurModel::ROLE_GESTIONNAIRE).
 
     private function setFlash(string $type, string $message): void
     {

@@ -1,5 +1,10 @@
 
-<a href="<?= path('commande','index') ?>" class="text-sm text-slate-500 hover:text-slate-900">
+<?php
+// Cette vue sert au gestionnaire ET au client (espace client) : le lien de
+// retour dépend donc de qui l'affiche. Par défaut, la liste du gestionnaire.
+$retour = isset($retour) ? $retour : path('commande','index');
+?>
+<a href="<?= $retour ?>" class="text-sm text-slate-500 hover:text-slate-900">
     &larr; Retour à la liste
 </a>
 

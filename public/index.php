@@ -29,3 +29,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// 7. Lancer le routeur : c'est lui qui appelle le bon contrôleur
+require_once ROOT . 'routes/web.php';
+

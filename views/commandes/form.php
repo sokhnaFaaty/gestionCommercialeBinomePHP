@@ -49,7 +49,7 @@ $messagesErreur = array_values($errors);
 
     <!-- ============================= 1. CLIENT ============================= -->
     <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="text-sm font-semibold uppercase tracking-wide text-indigo-600">1. Client</h2>
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-900">1. Client</h2>
 
         <div class="mt-5 grid gap-6 sm:grid-cols-3">
             <div>
@@ -60,10 +60,10 @@ $messagesErreur = array_values($errors);
                     <input type="text" id="telephone" name="telephone" value="<?= $ancienTelephone ?>"
                            placeholder="Ex: 771234567"
                            class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm
-                                  placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none">
+                                  placeholder:text-slate-400 focus:border-slate-900 focus:outline-none">
                     <button type="button" id="chercher-client"
-                            class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white
-                                   hover:bg-indigo-700">
+                            class="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white
+                                   hover:bg-slate-700">
                         OK
                     </button>
                 </div>
@@ -90,7 +90,7 @@ $messagesErreur = array_values($errors);
     <!-- Cette section reste inactive tant que le client n'est pas trouvé :
          une commande sans client n'a pas de sens, on impose donc l'ordre. -->
     <section id="section-produit" class="rounded-xl border border-slate-200 bg-slate-50 p-6 opacity-60">
-        <h2 class="text-sm font-semibold uppercase tracking-wide text-indigo-400">2. Produit</h2>
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">2. Produit</h2>
 
         <div class="mt-5">
             <label for="reference" class="block text-xs font-semibold uppercase tracking-wide text-slate-700">
@@ -99,11 +99,11 @@ $messagesErreur = array_values($errors);
             <div class="mt-2 flex max-w-sm gap-2">
                 <input type="text" id="reference" placeholder="Ex: REF-001" disabled
                        class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm
-                              placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none
+                              placeholder:text-slate-400 focus:border-slate-900 focus:outline-none
                               disabled:bg-slate-100">
                 <button type="button" id="chercher-produit" disabled
-                        class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white
-                               hover:bg-indigo-700 disabled:bg-indigo-300">
+                        class="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white
+                               hover:bg-slate-700 disabled:bg-slate-300">
                     OK
                 </button>
             </div>
@@ -150,7 +150,7 @@ $messagesErreur = array_values($errors);
                 </label>
                 <input type="number" id="quantite" min="1" value="1"
                        class="mt-2 w-24 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm
-                              focus:border-indigo-500 focus:outline-none">
+                              focus:border-slate-900 focus:outline-none">
             </div>
             <button type="button" id="ajouter-au-panier"
                     class="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
@@ -161,7 +161,7 @@ $messagesErreur = array_values($errors);
 
     <!-- =========================== 3. MON PANIER =========================== -->
     <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
-        <h2 class="border-b border-slate-200 px-6 py-4 text-sm font-semibold uppercase tracking-wide text-indigo-600">
+        <h2 class="border-b border-slate-200 px-6 py-4 text-sm font-semibold uppercase tracking-wide text-slate-900">
             3. Mon panier
         </h2>
 
@@ -190,16 +190,16 @@ $messagesErreur = array_values($errors);
                 <input type="text" id="description" name="description" value="<?= $ancienneDescription ?>"
                        placeholder="Ex: Commande urgente..."
                        class="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm
-                              placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none">
+                              placeholder:text-slate-400 focus:border-slate-900 focus:outline-none">
             </div>
 
             <div class="text-right">
                 <p class="text-base font-medium text-slate-500">
-                    Total : <span id="total-panier" class="text-xl font-bold text-indigo-600">0 F CFA</span>
+                    Total : <span id="total-panier" class="text-xl font-bold text-slate-900">0 F CFA</span>
                 </p>
                 <button type="submit" id="enregistrer" disabled
-                        class="mt-3 rounded-lg bg-indigo-600 px-5 py-3 text-sm font-semibold text-white
-                               hover:bg-indigo-700 disabled:bg-indigo-200">
+                        class="mt-3 rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white
+                               hover:bg-slate-700 disabled:bg-slate-300">
                     <?= $estModification ? 'Enregistrer les modifications' : 'Enregistrer la commande' ?>
                 </button>
             </div>

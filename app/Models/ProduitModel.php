@@ -3,10 +3,7 @@ namespace App\Models;
 
 use App\Core\Model;
 
-/**
- * Le statut ('disponible' / 'rupture') n'est pas saisi par le gestionnaire :
- * il est déduit automatiquement de qtsock (voir determinerStatut()).
- */
+// FICHIER TEMPORAIRE DE TEST - sera restaure a vide juste apres
 class ProduitModel extends Model
 {
     protected $table = 'produit';

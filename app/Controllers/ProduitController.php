@@ -1,0 +1,129 @@
+app/controllers/produitController.php
+
+<?php
+namespace App\Controllers;
+
+use App\Core\Controller;
+use App\Models\ProduitModel;
+
+class ProduitController extends Controller
+{
+    private ProduitModel $produitModel;
+
+    public function __construct()
+    {
+        $this->produitModel = new ProduitModel();
+    }
+
+    /**
+     * Liste des produits, avec recherche par libellé.
+     */
+    public function index(): void
+    {
+        $libelle = trim($_GET['libelle'] ?? '');
+
+        $produits = $libelle !== ''
+            ? $this->produitModel->searchByLibelle($libelle)
+            : $this->produitModel->allProduits();
+
+        loadView('produits/index', [
+            'title'    => 'Produits',
+            'produits' => $produits,
+            'libelle'  => $libelle,
+            'flash'    => $this->getFlash(),
+        ]);
+    }
+
+    /**
+     * Affiche le formulaire d'ajout.
+     */
+    public function create(): void
+    {
+        loadView('produits/form', [
+            'title'   => 'Nouveau produit',
+            'donnees' => [],
+            'errors'  => [],
+        ]);
+    }
+
+    /**
+     * Valide puis enregistre le produit.
+     */
+    public function store(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirectTo('produit', 'create');
+        }
+
+        $donnees = [
+            'reference' => trim($_POST['reference'] ?? ''),
+            'libelle'   => trim($_POST['libelle'] ?? ''),
+            'quantite'  => trim($_POST['quantite'] ?? ''),
+            'prix'      => trim($_POST['prix'] ?? ''),
+        ];
+
+        $errors = validDataProduit($donnees);
+
+        // Contrôle qui nécessite la base : unicité de la référence.
+        if (!isset($errors['reference']) && $this->produitModel->findByReference($donnees['reference'])) {
+            $errors['reference'] = 'Cette référence est déjà utilisée par un autre produit';
+        }
+
+        if ($errors) {
+            loadView('produits/form', [
+                'title'   => 'Nouveau produit',
+                'donnees' => $donnees,
+                'errors'  => $errors,
+            ]);
+            return;
+        }
+
+        $this->produitModel->createProduit($donnees);
+
+        $this->setFlash('succes', "Le produit {$donnees['libelle']} a été ajouté.");
+        redirectTo('produit', 'index');
+    }
+
+    /**
+     * Mise à jour rapide de la quantité en stock (formulaire inline dans la liste).
+     */
+    public function updateStock(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirectTo('produit', 'index');
+        }
+
+        $id     = (int) ($_POST['id'] ?? 0);
+        $qtsock = (int) ($_POST['qtsock'] ?? -1);
+
+        if ($id <= 0 || $qtsock < 0) {
+            $this->setFlash('erreur', 'Quantité invalide.');
+            redirectTo('produit', 'index');
+        }
+
+        $this->produitModel->updateStock($id, $qtsock);
+
+        $this->setFlash('succes', 'Le stock a été mis à jour.');
+        redirectTo('produit', 'index');
+    }
+
+    // TODO (branche auth) : réserver ces écrans au gestionnaire avec
+    // auth() puis hasRole(UtilisateurModel::ROLE_GESTIONNAIRE).
+
+    private function setFlash(string $type, string $message): void
+    {
+        $_SESSION['flash'] = ['type' => $type, 'message' => $message];
+    }
+
+    private function getFlash(): ?array
+    {
+        if (!isset($_SESSION['flash'])) {
+            return null;
+        }
+
+        $flash = $_SESSION['flash'];
+        unset($_SESSION['flash']);
+
+        return $flash;
+    }
+}

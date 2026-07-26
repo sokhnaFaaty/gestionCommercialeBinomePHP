@@ -47,6 +47,23 @@ CREATE TABLE produit (
     statut type_statut_produit NOT NULL DEFAULT 'disponible'
 );
 
+CREATE TABLE categorie (
+    id SERIAL PRIMARY KEY,
+    libelle VARCHAR(150) NOT NULL
+);
+
+ALTER TABLE produit ADD COLUMN categorie_id INT REFERENCES categorie(id);
+
+INSERT INTO categorie (libelle) VALUES 
+('Alimentation et Boissons'),
+('Vêtements et Mode'),
+('Beauté et Cosmétiques'),
+('Jeux et Jouets'),
+('Maison et Décoration'),
+('Périphériques informatique')
+
+UPDATE produit SET categorie_id = 6 WHERE id = 1;
+
 -- Table commande (Dépend de utilisateur)
 -- La colonne garde le nom client_id : elle pointe un utilisateur de role 'client'.
 CREATE TABLE commande (
@@ -109,3 +126,7 @@ VALUES ('C001', '2026-08-20', 20000.00, TRUE, 1);
 -- Insertion d'une ligne de commande liée à la commande 1 et au produit 1 (Prendra l'ID 1)
 INSERT INTO ligne_commande (quantite, prix, commande_id, produit_id) 
 VALUES (10, 5000.00, 1, 1);
+
+ALTER TABLE produit ADD COLUMN reference VARCHAR(50);
+UPDATE produit SET reference = 'PROD-' || id WHERE reference IS NULL;
+ALTER TABLE produit ADD CONSTRAINT produit_reference_unique UNIQUE (reference);

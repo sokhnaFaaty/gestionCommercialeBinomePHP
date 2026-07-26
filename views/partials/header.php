@@ -1,57 +1,50 @@
 <?php
-use App\Controllers\AuthController;
+// Entrées de navigation.
+// Une entrée ne s'affiche que si son contrôleur et son action existent déjà :
+// on évite ainsi les liens qui mèneraient à une 404. Elles apparaîtront
+// d'elles-mêmes au fur et à mesure que les fonctionnalités seront écrites.
+$onglets = [
+    ['Clients',    'utilisateur', 'index'],
+    ['Produits',   'produit',     'index'],
+    ['Commandes',  'commande',    'index'],
+    ['Catégories', 'categorie',   'index'],
+    ['Factures',   'facture',     'index'],
+    ['Paiements',  'paiement',    'index'],
+];
 
-$utilisateurConnecte = $_SESSION['user'] ?? null;
+$entrees = array_filter($onglets, function (array $onglet): bool {
+    $classe = 'App\\Controllers\\' . ucfirst($onglet[1]) . 'Controller';
 
-// Le menu est décrit une seule fois, dans AuthController::menu().
-// On n'affiche ici que les entrées déjà développées.
-$entrees = $utilisateurConnecte
-    ? array_filter(AuthController::menu($utilisateurConnecte['role']), fn($e) => $e['disponible'])
-    : [];
+    return class_exists($classe) && method_exists($classe, $onglet[2]);
+});
 
 // Contrôleur courant, pour souligner l'onglet actif.
 $urlCourante = isset($_GET['url'])
     ? trim($_GET['url'], '/')
     : trim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '', '/');
 
-$controleurCourant = explode('/', $urlCourante)[0] ?: 'auth';
+$controleurCourant = explode('/', $urlCourante)[0] ?: 'utilisateur';
 ?>
 <header class="border-b border-slate-200">
     <div class="mx-auto flex w-full max-w-5xl items-center justify-between gap-6 px-6">
 
-        <a href="<?= path('auth', 'index') ?>" class="py-4 text-sm font-semibold tracking-tight text-slate-900">
+        <a href="<?= path('utilisateur', 'index') ?>"
+           class="py-4 text-sm font-semibold tracking-tight text-slate-900">
             Gestion commerciale
         </a>
 
-        <nav class="flex flex-1 items-center gap-6">
-            <?php foreach ($entrees as $entree): ?>
-                <?php $actif = $entree['controleur'] === $controleurCourant; ?>
-                <a href="<?= path($entree['controleur'], $entree['action']) ?>"
+        <nav class="flex items-center gap-6">
+            <?php foreach ($entrees as [$libelle, $controleur, $action]): ?>
+                <?php $actif = $controleur === $controleurCourant; ?>
+                <a href="<?= path($controleur, $action) ?>"
                    class="border-b-2 py-4 text-sm transition-colors
                           <?= $actif
                                 ? 'border-slate-900 text-slate-900'
                                 : 'border-transparent text-slate-500 hover:text-slate-900' ?>">
-                    <?= htmlspecialchars($entree['libelle']) ?>
+                    <?= htmlspecialchars($libelle) ?>
                 </a>
             <?php endforeach; ?>
         </nav>
-
-        <?php if ($utilisateurConnecte): ?>
-            <div class="flex items-center gap-4 py-4">
-                <span class="text-sm text-slate-500">
-                    <?= htmlspecialchars($utilisateurConnecte['prenom'] . ' ' . $utilisateurConnecte['nom']) ?>
-                    <span class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">
-                        <?= htmlspecialchars($utilisateurConnecte['role']) ?>
-                    </span>
-                </span>
-
-                <form method="post" action="<?= path('auth', 'logout') ?>">
-                    <button type="submit" class="text-sm text-slate-500 hover:text-slate-900">
-                        Déconnexion
-                    </button>
-                </form>
-            </div>
-        <?php endif; ?>
 
     </div>
 </header>

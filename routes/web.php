@@ -4,13 +4,13 @@
 // -------------------------------------------------------------------------
 // Toutes les URL passent ici (voir public/.htaccess et public/index.php).
 // Convention : /controleur/action/parametres
-//   /auth/login          -> AuthController::login()
-//   /auth/logout         -> AuthController::logout()
-//   /client/detail/3     -> ClientController::detail(3)
+//   /utilisateur              -> UtilisateurController::index()
+//   /utilisateur/create       -> UtilisateurController::create()
+//   /utilisateur/delete/3     -> UtilisateurController::delete(3)
 // C'est exactement ce que génèrent les helpers path() et redirectTo().
 // =========================================================================
 
-const CONTROLEUR_PAR_DEFAUT = 'auth';
+const CONTROLEUR_PAR_DEFAUT = 'utilisateur';
 const ACTION_PAR_DEFAUT     = 'index';
 
 // 1. Récupérer l'URL demandée.
@@ -29,7 +29,7 @@ $controleur = $segments[0] ?? CONTROLEUR_PAR_DEFAUT;
 $action     = $segments[1] ?? ACTION_PAR_DEFAUT;
 $params     = array_slice($segments, 2);
 
-// 3. Construire le nom complet de la classe : auth -> App\Controllers\AuthController
+// 3. Construire le nom complet de la classe : utilisateur -> App\Controllers\UtilisateurController
 $classe = 'App\\Controllers\\' . ucfirst($controleur) . 'Controller';
 
 // 4. Vérifier puis exécuter

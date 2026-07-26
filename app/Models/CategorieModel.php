@@ -1,5 +1,3 @@
-<!-- app/Models/CategorieModel.php -->
-
 <?php
 namespace App\Models;
 

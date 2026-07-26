@@ -1,5 +1,3 @@
-app/controllers/produitController.php
-
 <?php
 namespace App\Controllers;
 

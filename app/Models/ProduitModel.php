@@ -1,6 +1,4 @@
-
 <?php
-// app/Models/produitModel.php
 namespace App\Models;
 
 use App\Core\Model;

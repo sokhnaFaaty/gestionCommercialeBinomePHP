@@ -1,4 +1,3 @@
-<!-- pp/models/CategorieModel.php -->
 <?php
 namespace App\Controllers;
 

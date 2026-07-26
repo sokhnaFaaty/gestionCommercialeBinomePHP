@@ -39,15 +39,30 @@ class CommandeModel extends Model
         $this->db->beginTransaction();
 
         try {
-            // RETURNING id est propre à PostgreSQL : l'INSERT renvoie l'id créé.
-            $creee = $this->executeSelectOne(
-                "INSERT INTO {$this->table} (date, montant_total, validee, client_id)
-                 VALUES (CURRENT_DATE, 0, false, :client_id)
-                 RETURNING id",
-                ['client_id' => $clientId]
+            // La colonne numero est NOT NULL : impossible d'insérer la commande
+            // puis de la numéroter après coup. Or le numéro est construit à
+            // partir de l'id... que PostgreSQL n'attribue qu'à l'insertion.
+            //
+            // On demande donc à la séquence le prochain id AVANT d'insérer
+            // (nextval), ce qui permet de fournir l'id et le numéro d'un seul
+            // coup. pg_get_serial_sequence() retrouve le nom de la séquence
+            // associée à commande.id, sans avoir à l'écrire en dur.
+            $suivant = $this->executeSelectOne(
+                "SELECT nextval(pg_get_serial_sequence('{$this->table}', 'id')) AS id"
             );
 
-            $commandeId = (int) $creee->id;
+            $commandeId = (int) $suivant->id;
+            $numero     = 'CMD-' . str_pad((string) $commandeId, 6, '0', STR_PAD_LEFT);
+
+            $this->executeUpdate(
+                "INSERT INTO {$this->table} (id, numero, date, montant_total, validee, client_id)
+                 VALUES (:id, :numero, CURRENT_DATE, 0, false, :client_id)",
+                [
+                    'id'        => $commandeId,
+                    'numero'    => $numero,
+                    'client_id' => $clientId,
+                ]
+            );
 
             $produitCommandeModel = new ProduitCommandeModel();
             $produitModel         = new ProduitModel();
@@ -67,12 +82,10 @@ class CommandeModel extends Model
                 $montantTotal += $quantite * $prix;
             }
 
-            $numero = 'CMD-' . str_pad((string) $commandeId, 6, '0', STR_PAD_LEFT);
-
+            // Le total n'est connu qu'après avoir parcouru toutes les lignes.
             $this->executeUpdate(
-                "UPDATE {$this->table} SET numero = :numero, montant_total = :montant WHERE id = :id",
+                "UPDATE {$this->table} SET montant_total = :montant WHERE id = :id",
                 [
-                    'numero'  => $numero,
                     'montant' => $montantTotal,
                     'id'      => $commandeId,
                 ]

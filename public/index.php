@@ -17,7 +17,14 @@ define('BASE_URL', 'http://localhost:8000/');
 define('ROOT', dirname(__DIR__) . DIRECTORY_SEPARATOR);
 define('WEBROOT', BASE_URL);
 
-// 5. Démarrer la session (nécessaire pour isConnected(), auth(), hasRole())
+// 5. Charger les fonctions utilitaires
+// On les require ici (et pas seulement via l'autoload.files de composer.json)
+// pour que le projet fonctionne meme si le composer.json n'est pas le meme
+// d'une machine a l'autre. require_once evite le double chargement.
+require_once ROOT . 'app/Helpers/helpers.php';
+require_once ROOT . 'app/Helpers/validate.php';
+
+// 6. Démarrer la session (nécessaire pour isConnected(), auth(), hasRole())
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

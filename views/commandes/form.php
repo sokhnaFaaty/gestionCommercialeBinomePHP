@@ -64,7 +64,7 @@ $messagesErreur = array_values($errors);
                         OK
                     </button>
                 </div>
-                <p id="message-client" class="mt-1 text-sm text-red-600"></p>
+                <p id="message-client" class="mt-1 text-sm"></p>
             </div>
 
             <div>
@@ -82,19 +82,28 @@ $messagesErreur = array_values($errors);
     </section>
 
     <!-- ============================ 2. PRODUIT ============================ -->
-    <section class="rounded-lg border border-slate-200 bg-slate-50 p-6">
-        <h2 class="text-xs font-semibold uppercase tracking-wide text-indigo-500">2. Produit</h2>
+    <!-- Cette section reste inactive tant que le client n'est pas trouvé :
+         une commande sans client n'a pas de sens, on impose donc l'ordre. -->
+    <section id="section-produit" class="rounded-lg border border-slate-200 bg-slate-50 p-6 opacity-50">
+        <div class="flex items-baseline gap-3">
+            <h2 class="text-xs font-semibold uppercase tracking-wide text-indigo-500">2. Produit</h2>
+            <span id="attente-client" class="text-xs text-slate-400">
+                Validez d'abord le téléphone du client
+            </span>
+        </div>
 
         <div class="mt-4">
             <label for="reference" class="block text-xs font-medium uppercase tracking-wide text-slate-700">
                 Référence produit
             </label>
             <div class="mt-1 flex max-w-sm gap-2">
-                <input type="text" id="reference" placeholder="Ex : PROD-000001"
+                <input type="text" id="reference" placeholder="Ex : PROD-000001" disabled
                        class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
-                              focus:border-slate-900 focus:outline-none">
-                <button type="button" id="chercher-produit"
-                        class="rounded-md bg-indigo-400 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500">
+                              focus:border-slate-900 focus:outline-none
+                              disabled:bg-slate-100 disabled:text-slate-400">
+                <button type="button" id="chercher-produit" disabled
+                        class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white
+                               hover:bg-indigo-700 disabled:bg-indigo-300">
                     OK
                 </button>
             </div>
@@ -131,9 +140,10 @@ $messagesErreur = array_values($errors);
                     Quantité
                 </label>
                 <div class="mt-1 flex gap-2">
-                    <input type="number" id="quantite" min="1" value="1"
+                    <input type="number" id="quantite" min="1" value="1" disabled
                            class="w-20 rounded-md border border-slate-300 px-3 py-2 text-sm
-                                  focus:border-slate-900 focus:outline-none">
+                                  focus:border-slate-900 focus:outline-none
+                                  disabled:bg-slate-100 disabled:text-slate-400">
                     <button type="button" id="ajouter-au-panier" disabled
                             class="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white
                                    hover:bg-slate-700 disabled:bg-slate-300">
@@ -209,6 +219,9 @@ let panier = <?= json_encode($lignesInitiales, JSON_UNESCAPED_UNICODE) ?>;
 // Le produit affiché dans la section 2, en attente d'être ajouté au panier.
 let produitCourant = null;
 
+// Tant que le client n'est pas trouvé, la section 2 reste inactive.
+let clientValide = false;
+
 const $ = (id) => document.getElementById(id);
 
 /** 5000 -> « 5 000 F CFA » (même format que formatPrix() côté PHP). */
@@ -222,12 +235,10 @@ function formatPrix(montant) {
 $('chercher-client').addEventListener('click', async function () {
     const telephone = $('telephone').value.trim();
 
-    $('message-client').textContent = '';
-    $('client-nom').value    = '';
-    $('client-prenom').value = '';
+    oublierClient();
 
     if (telephone === '') {
-        $('message-client').textContent = 'Veuillez saisir un numéro';
+        afficherMessageClient('Veuillez saisir un numéro', false);
         return;
     }
 
@@ -235,13 +246,64 @@ $('chercher-client').addEventListener('click', async function () {
     const client  = await reponse.json();
 
     if (!client.trouve) {
-        $('message-client').textContent = client.message;
+        // « Client introuvable » : la section produit reste fermée.
+        afficherMessageClient(client.message, false);
         return;
     }
 
     $('client-nom').value    = client.nom;
     $('client-prenom').value = client.prenom;
+    afficherMessageClient('Client trouvé', true);
+
+    clientValide = true;
+    ouvrirSectionProduit();
+    majBoutonEnregistrer();
 });
+
+// Si le numéro est modifié après coup, le client affiché ne correspond plus :
+// on referme tout, il faut revalider.
+$('telephone').addEventListener('input', function () {
+    if (clientValide) {
+        oublierClient();
+    }
+});
+
+function afficherMessageClient(message, succes) {
+    const zone = $('message-client');
+    zone.textContent = message;
+    zone.className   = 'mt-1 text-sm ' + (succes ? 'text-emerald-600' : 'text-red-600');
+}
+
+/** Revenir à l'état de départ : aucun client validé, section produit fermée. */
+function oublierClient() {
+    clientValide = false;
+
+    $('client-nom').value    = '';
+    $('client-prenom').value = '';
+    afficherMessageClient('', false);
+
+    fermerSectionProduit();
+    majBoutonEnregistrer();
+}
+
+function ouvrirSectionProduit() {
+    $('section-produit').classList.remove('opacity-50');
+    $('attente-client').textContent = '';
+    $('reference').disabled        = false;
+    $('chercher-produit').disabled = false;
+    $('quantite').disabled         = false;
+}
+
+function fermerSectionProduit() {
+    $('section-produit').classList.add('opacity-50');
+    $('attente-client').textContent = "Validez d'abord le téléphone du client";
+    $('reference').disabled        = true;
+    $('chercher-produit').disabled = true;
+    $('quantite').disabled         = true;
+    $('reference').value = '';
+    $('message-produit').textContent = '';
+    reinitialiserProduit();
+}
 
 // ------------------------------------------------------------------
 // 2. Produit : chercher le libellé, le prix et le stock
@@ -378,7 +440,12 @@ function afficherPanier() {
     });
 
     $('total-panier').textContent = formatPrix(total);
-    $('enregistrer').disabled     = panier.length === 0;
+    majBoutonEnregistrer();
+}
+
+/** On n'enregistre que si le client est validé ET le panier non vide. */
+function majBoutonEnregistrer() {
+    $('enregistrer').disabled = !clientValide || panier.length === 0;
 }
 
 // ------------------------------------------------------------------

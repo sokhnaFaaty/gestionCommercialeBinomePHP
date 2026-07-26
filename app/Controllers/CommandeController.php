@@ -286,7 +286,7 @@ class CommandeController extends Controller
         if (!$client || $client->role !== UtilisateurModel::ROLE_CLIENT) {
             $this->repondreJson([
                 'trouve'  => false,
-                'message' => "Aucun client ne correspond à ce numéro",
+                'message' => 'Client introuvable',
             ]);
         }
 
@@ -308,7 +308,7 @@ class CommandeController extends Controller
         if (!$produit) {
             $this->repondreJson([
                 'trouve'  => false,
-                'message' => "Aucun produit ne porte cette référence",
+                'message' => 'Produit introuvable',
             ]);
         }
 

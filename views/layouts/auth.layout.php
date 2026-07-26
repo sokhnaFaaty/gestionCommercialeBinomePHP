@@ -6,15 +6,9 @@
     <title><?= isset($title) ? htmlspecialchars($title) . ' — ' : '' ?>Gestion commerciale</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="h-full bg-white text-slate-700 antialiased">
+<body class="flex h-full items-center justify-center bg-slate-50 px-6 text-slate-700 antialiased">
 
-    <?php require ROOT . 'views/partials/header.php'; ?>
-
-    <main class="mx-auto w-full max-w-5xl px-6 py-10">
-        <?= $content ?>
-    </main>
-
-    <?php require ROOT . 'views/partials/footer.php'; ?>
+    <?= $content ?>
 
 </body>
 </html>

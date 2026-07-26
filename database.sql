@@ -8,6 +8,7 @@ DROP TABLE IF EXISTS paiement CASCADE;
 DROP TABLE IF EXISTS facture CASCADE;
 DROP TABLE IF EXISTS commande CASCADE;
 DROP TABLE IF EXISTS produit CASCADE;
+DROP TABLE IF EXISTS utilisateur CASCADE;
 DROP TABLE IF EXISTS client CASCADE;
 
 DROP TYPE IF EXISTS type_statut_paiement CASCADE;
@@ -19,12 +20,21 @@ CREATE TYPE type_statut_produit AS ENUM ('disponible', 'rupture');
 
 -- 2. Création des tables (dans l'ordre strict des dépendances)
 
--- Table client (Doit être créée en premier)
-CREATE TABLE client (
+-- Table utilisateur (Doit être créée en premier)
+-- Elle contient les DEUX types de comptes, distingués par la colonne role :
+--   role = 'client'       -> passe des commandes, consulte les siennes
+--   role = 'gestionnaire' -> accès à toute l'application
+-- telephone est optionnel : un gestionnaire n'en a pas.
+-- TODO (avant la soutenance) : hacher le mot de passe, il est en clair ici.
+CREATE TABLE utilisateur (
     id SERIAL PRIMARY KEY,
     nom VARCHAR(100) NOT NULL,
     prenom VARCHAR(100) NOT NULL,
-    telephone VARCHAR(20) NOT NULL UNIQUE
+    telephone VARCHAR(20) UNIQUE,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'client'
+        CHECK (role IN ('client', 'gestionnaire'))
 );
 
 -- Table produit (Doit être créée en deuxième)
@@ -36,14 +46,15 @@ CREATE TABLE produit (
     statut type_statut_produit NOT NULL DEFAULT 'disponible'
 );
 
--- Table commande (Dépend de client)
+-- Table commande (Dépend de utilisateur)
+-- La colonne garde le nom client_id : elle pointe un utilisateur de role 'client'.
 CREATE TABLE commande (
     id SERIAL PRIMARY KEY,
     numero VARCHAR(50) NOT NULL UNIQUE,
     date DATE NOT NULL DEFAULT CURRENT_DATE,
     montant_total NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
     validee BOOLEAN NOT NULL DEFAULT FALSE,
-    client_id INT NOT NULL REFERENCES client(id) ON DELETE RESTRICT
+    client_id INT NOT NULL REFERENCES utilisateur(id) ON DELETE RESTRICT
 );
 
 -- Table facture (Dépend de commande)
@@ -79,8 +90,12 @@ CREATE TABLE ligne_commande (
 -- =========================================================================
 
 -- Insertion d'un client (Prendra l'ID 1)
-INSERT INTO client (nom, prenom, telephone) 
-VALUES ('Diop', 'Sokhna', '771234567');
+INSERT INTO utilisateur (nom, prenom, telephone, email, password, role)
+VALUES ('Diop', 'Sokhna', '771234567', 'sokhna.diop@exemple.sn', 'passer123', 'client');
+
+-- Insertion d'un gestionnaire (Prendra l'ID 2)
+INSERT INTO utilisateur (nom, prenom, telephone, email, password, role)
+VALUES ('Sow', 'Fatou', NULL, 'gestionnaire@exemple.sn', 'passer123', 'gestionnaire');
 
 -- Insertion d'un produit (Prendra l'ID 1)
 INSERT INTO produit (libelle, qte_stock, prix_unitaire, statut) 

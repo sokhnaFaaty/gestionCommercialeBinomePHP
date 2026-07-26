@@ -9,7 +9,7 @@ class Database {
     private $conn;
 
     private function __construct() {
-        $config = require __DIR__ . '/../../config/database.php';
+        $config = require __DIR__ . '/../../src/config/database.php';
         try {
             // PostgreSQL : le charset ne se met pas dans le DSN (contrairement à MySQL),
             // on le définit après la connexion avec SET NAMES.

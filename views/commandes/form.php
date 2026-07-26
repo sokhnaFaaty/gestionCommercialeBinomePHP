@@ -3,12 +3,16 @@
 // C'est la variable $commande qui fait la différence : null = création.
 $estModification = isset($commande) && $commande !== null;
 
-$ancienTelephone   = htmlspecialchars($donnees['telephone'] ?? '');
+$ancienTelephone     = htmlspecialchars($donnees['telephone'] ?? '');
 $ancienneDescription = htmlspecialchars($donnees['description'] ?? '');
 
 // Le panier de départ. Vide à la création, rempli en modification (ou après
 // une erreur de validation). Il est transmis au JavaScript en JSON.
 $lignesInitiales = $donnees['lignes'] ?? [];
+
+// Erreurs renvoyées par le serveur. Le JavaScript en évite la plupart, mais
+// elles restent la seule vraie garantie : voir CommandeController::store().
+$messagesErreur = array_values($errors);
 ?>
 
 <a href="<?= path('commande','index') ?>" class="text-sm text-slate-500 hover:text-slate-900">
@@ -21,13 +25,8 @@ $lignesInitiales = $donnees['lignes'] ?? [];
             : 'Nouvelle commande' ?>
 </h1>
 
-<?php
-// Erreurs renvoyées par le serveur. Le JavaScript en évite la plupart, mais
-// elles restent la seule vraie garantie : voir CommandeController::store().
-$messagesErreur = array_values($errors);
-?>
 <?php if ($messagesErreur): ?>
-    <div class="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+    <div class="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
         <ul class="list-inside list-disc space-y-1">
             <?php foreach ($messagesErreur as $message): ?>
                 <li><?= htmlspecialchars($message) ?></li>
@@ -36,31 +35,35 @@ $messagesErreur = array_values($errors);
     </div>
 <?php endif; ?>
 
+<!-- Les marges négatives font déborder le fond gris jusqu'aux bords de la
+     zone de contenu, pour détacher les trois cartes blanches. -->
+<div class="-mx-6 mt-6 bg-slate-100 px-6 py-8">
 <form method="post"
       id="formulaire-commande"
       action="<?= $estModification ? path('commande','update') : path('commande','store') ?>"
-      class="mt-8 space-y-6">
+      class="space-y-6">
 
     <?php if ($estModification): ?>
         <input type="hidden" name="id" value="<?= (int) $commande->id ?>">
     <?php endif; ?>
 
     <!-- ============================= 1. CLIENT ============================= -->
-    <section class="rounded-lg border border-slate-200 bg-white p-6">
-        <h2 class="text-xs font-semibold uppercase tracking-wide text-indigo-600">1. Client</h2>
+    <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-indigo-600">1. Client</h2>
 
-        <div class="mt-4 grid gap-4 sm:grid-cols-3">
+        <div class="mt-5 grid gap-6 sm:grid-cols-3">
             <div>
-                <label for="telephone" class="block text-xs font-medium uppercase tracking-wide text-slate-700">
+                <label for="telephone" class="block text-xs font-semibold uppercase tracking-wide text-slate-700">
                     Téléphone
                 </label>
-                <div class="mt-1 flex gap-2">
+                <div class="mt-2 flex gap-2">
                     <input type="text" id="telephone" name="telephone" value="<?= $ancienTelephone ?>"
-                           placeholder="Ex : 771234567"
-                           class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
-                                  focus:border-slate-900 focus:outline-none">
+                           placeholder="Ex: 771234567"
+                           class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm
+                                  placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none">
                     <button type="button" id="chercher-client"
-                            class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+                            class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white
+                                   hover:bg-indigo-700">
                         OK
                     </button>
                 </div>
@@ -68,15 +71,17 @@ $messagesErreur = array_values($errors);
             </div>
 
             <div>
-                <label class="block text-xs font-medium uppercase tracking-wide text-slate-700">Nom</label>
+                <label class="block text-xs font-semibold uppercase tracking-wide text-slate-700">Nom</label>
                 <input type="text" id="client-nom" readonly placeholder="Généré automatiquement"
-                       class="mt-1 w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                       class="mt-2 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm
+                              text-slate-600 placeholder:text-slate-400">
             </div>
 
             <div>
-                <label class="block text-xs font-medium uppercase tracking-wide text-slate-700">Prénom</label>
+                <label class="block text-xs font-semibold uppercase tracking-wide text-slate-700">Prénom</label>
                 <input type="text" id="client-prenom" readonly placeholder="Généré automatiquement"
-                       class="mt-1 w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                       class="mt-2 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm
+                              text-slate-600 placeholder:text-slate-400">
             </div>
         </div>
     </section>
@@ -84,25 +89,20 @@ $messagesErreur = array_values($errors);
     <!-- ============================ 2. PRODUIT ============================ -->
     <!-- Cette section reste inactive tant que le client n'est pas trouvé :
          une commande sans client n'a pas de sens, on impose donc l'ordre. -->
-    <section id="section-produit" class="rounded-lg border border-slate-200 bg-slate-50 p-6 opacity-50">
-        <div class="flex items-baseline gap-3">
-            <h2 class="text-xs font-semibold uppercase tracking-wide text-indigo-500">2. Produit</h2>
-            <span id="attente-client" class="text-xs text-slate-400">
-                Validez d'abord le téléphone du client
-            </span>
-        </div>
+    <section id="section-produit" class="rounded-xl border border-slate-200 bg-slate-50 p-6 opacity-60">
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-indigo-400">2. Produit</h2>
 
-        <div class="mt-4">
-            <label for="reference" class="block text-xs font-medium uppercase tracking-wide text-slate-700">
+        <div class="mt-5">
+            <label for="reference" class="block text-xs font-semibold uppercase tracking-wide text-slate-700">
                 Référence produit
             </label>
-            <div class="mt-1 flex max-w-sm gap-2">
-                <input type="text" id="reference" placeholder="Ex : PROD-000001" disabled
-                       class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm
-                              focus:border-slate-900 focus:outline-none
-                              disabled:bg-slate-100 disabled:text-slate-400">
+            <div class="mt-2 flex max-w-sm gap-2">
+                <input type="text" id="reference" placeholder="Ex: REF-001" disabled
+                       class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm
+                              placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none
+                              disabled:bg-slate-100">
                 <button type="button" id="chercher-produit" disabled
-                        class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white
+                        class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white
                                hover:bg-indigo-700 disabled:bg-indigo-300">
                     OK
                 </button>
@@ -110,53 +110,58 @@ $messagesErreur = array_values($errors);
             <p id="message-produit" class="mt-1 text-sm text-red-600"></p>
         </div>
 
-        <div class="mt-4 grid gap-4 sm:grid-cols-4">
+        <div class="mt-5 grid gap-6 sm:grid-cols-3">
             <div>
-                <label class="block text-xs font-medium uppercase tracking-wide text-slate-700">Libellé</label>
+                <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500">Libellé</label>
                 <input type="text" id="produit-libelle" readonly placeholder="Produit recherché"
-                       class="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
+                       class="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm
+                              text-slate-600 placeholder:text-slate-400">
             </div>
 
             <div>
-                <label class="block text-xs font-medium uppercase tracking-wide text-slate-700">Prix</label>
+                <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500">Prix</label>
                 <input type="text" id="produit-prix" readonly placeholder="0 F CFA"
-                       class="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
+                       class="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm
+                              text-slate-600 placeholder:text-slate-400">
             </div>
 
             <div>
-                <label class="block text-xs font-medium uppercase tracking-wide text-slate-700">Stock disponible</label>
-                <div class="mt-1 flex items-center gap-2">
+                <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Stock disponible
+                </label>
+                <div class="mt-2 flex items-center gap-2">
                     <input type="text" id="produit-stock" readonly placeholder="0"
-                           class="w-20 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
+                           class="w-24 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm
+                                  text-slate-600 placeholder:text-slate-400">
                     <span id="produit-dispo"
-                          class="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-500">
+                          class="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-500">
                         Dispo : -
                     </span>
                 </div>
             </div>
+        </div>
 
+        <!-- Apparaît seulement quand un produit a été trouvé : tant qu'il n'y a
+             rien à ajouter, la quantité n'aurait aucun sens. -->
+        <div id="bloc-quantite" class="mt-5 hidden items-end gap-3">
             <div>
-                <label for="quantite" class="block text-xs font-medium uppercase tracking-wide text-slate-700">
+                <label for="quantite" class="block text-xs font-semibold uppercase tracking-wide text-slate-500">
                     Quantité
                 </label>
-                <div class="mt-1 flex gap-2">
-                    <input type="number" id="quantite" min="1" value="1" disabled
-                           class="w-20 rounded-md border border-slate-300 px-3 py-2 text-sm
-                                  focus:border-slate-900 focus:outline-none
-                                  disabled:bg-slate-100 disabled:text-slate-400">
-                    <button type="button" id="ajouter-au-panier" disabled
-                            class="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white
-                                   hover:bg-slate-700 disabled:bg-slate-300">
-                        Ajouter
-                    </button>
-                </div>
+                <input type="number" id="quantite" min="1" value="1"
+                       class="mt-2 w-24 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm
+                              focus:border-indigo-500 focus:outline-none">
             </div>
+            <button type="button" id="ajouter-au-panier"
+                    class="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
+                Ajouter au panier
+            </button>
         </div>
     </section>
 
     <!-- =========================== 3. MON PANIER =========================== -->
-    <section class="rounded-lg border border-slate-200 bg-white">
-        <h2 class="border-b border-slate-200 px-6 py-4 text-xs font-semibold uppercase tracking-wide text-indigo-600">
+    <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+        <h2 class="border-b border-slate-200 px-6 py-4 text-sm font-semibold uppercase tracking-wide text-indigo-600">
             3. Mon panier
         </h2>
 
@@ -164,12 +169,12 @@ $messagesErreur = array_values($errors);
             <table class="w-full text-sm">
                 <thead class="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
                     <tr>
-                        <th class="px-6 py-3 font-medium">Référence</th>
-                        <th class="px-6 py-3 font-medium">Libellé</th>
-                        <th class="px-6 py-3 font-medium">Prix unit.</th>
-                        <th class="px-6 py-3 font-medium">Qté</th>
-                        <th class="px-6 py-3 font-medium">Total</th>
-                        <th class="px-6 py-3 font-medium text-right">Action</th>
+                        <th class="px-6 py-3 font-semibold">Référence</th>
+                        <th class="px-6 py-3 font-semibold">Libellé</th>
+                        <th class="px-6 py-3 font-semibold">Prix unit.</th>
+                        <th class="px-6 py-3 font-semibold">Qté</th>
+                        <th class="px-6 py-3 font-semibold">Total</th>
+                        <th class="px-6 py-3 text-right font-semibold">Action</th>
                     </tr>
                 </thead>
                 <!-- Rempli par le JavaScript, à partir du tableau « panier ». -->
@@ -179,21 +184,21 @@ $messagesErreur = array_values($errors);
 
         <div class="flex flex-wrap items-end justify-between gap-6 border-t border-slate-200 px-6 py-5">
             <div class="w-full max-w-xs">
-                <label for="description" class="block text-xs font-medium uppercase tracking-wide text-slate-700">
+                <label for="description" class="block text-xs font-semibold uppercase tracking-wide text-slate-500">
                     Description (optionnel)
                 </label>
                 <input type="text" id="description" name="description" value="<?= $ancienneDescription ?>"
-                       placeholder="Ex : Commande urgente..."
-                       class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm
-                              focus:border-slate-900 focus:outline-none">
+                       placeholder="Ex: Commande urgente..."
+                       class="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm
+                              placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none">
             </div>
 
             <div class="text-right">
-                <p class="text-sm text-slate-500">
-                    Total : <span id="total-panier" class="text-lg font-semibold text-indigo-600">0 F CFA</span>
+                <p class="text-base font-medium text-slate-500">
+                    Total : <span id="total-panier" class="text-xl font-bold text-indigo-600">0 F CFA</span>
                 </p>
                 <button type="submit" id="enregistrer" disabled
-                        class="mt-3 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white
+                        class="mt-3 rounded-lg bg-indigo-600 px-5 py-3 text-sm font-semibold text-white
                                hover:bg-indigo-700 disabled:bg-indigo-200">
                     <?= $estModification ? 'Enregistrer les modifications' : 'Enregistrer la commande' ?>
                 </button>
@@ -207,6 +212,7 @@ $messagesErreur = array_values($errors);
     <div id="champs-caches"></div>
 
 </form>
+</div>
 
 <script>
 // =========================================================================
@@ -287,19 +293,15 @@ function oublierClient() {
 }
 
 function ouvrirSectionProduit() {
-    $('section-produit').classList.remove('opacity-50');
-    $('attente-client').textContent = '';
+    $('section-produit').classList.remove('opacity-60');
     $('reference').disabled        = false;
     $('chercher-produit').disabled = false;
-    $('quantite').disabled         = false;
 }
 
 function fermerSectionProduit() {
-    $('section-produit').classList.add('opacity-50');
-    $('attente-client').textContent = "Validez d'abord le téléphone du client";
+    $('section-produit').classList.add('opacity-60');
     $('reference').disabled        = true;
     $('chercher-produit').disabled = true;
-    $('quantite').disabled         = true;
     $('reference').value = '';
     $('message-produit').textContent = '';
     reinitialiserProduit();
@@ -333,7 +335,11 @@ $('chercher-produit').addEventListener('click', async function () {
     $('produit-prix').value    = formatPrix(produit.prix);
     $('produit-stock').value   = produit.stock;
     $('produit-dispo').textContent = 'Dispo : ' + stockRestant(produit.reference, produit.stock);
-    $('ajouter-au-panier').disabled = false;
+
+    // Le produit est identifié : la quantité a maintenant un sens.
+    $('bloc-quantite').classList.remove('hidden');
+    $('bloc-quantite').classList.add('flex');
+    $('quantite').focus();
 });
 
 function reinitialiserProduit() {
@@ -342,7 +348,9 @@ function reinitialiserProduit() {
     $('produit-prix').value    = '';
     $('produit-stock').value   = '';
     $('produit-dispo').textContent = 'Dispo : -';
-    $('ajouter-au-panier').disabled = true;
+    $('quantite').value = 1;
+    $('bloc-quantite').classList.add('hidden');
+    $('bloc-quantite').classList.remove('flex');
 }
 
 /** Stock encore disponible, une fois retiré ce qui est déjà dans le panier. */
@@ -389,10 +397,10 @@ $('ajouter-au-panier').addEventListener('click', function () {
     }
 
     $('reference').value = '';
-    $('quantite').value  = 1;
     $('message-produit').textContent = '';
     reinitialiserProduit();
     afficherPanier();
+    $('reference').focus();
 });
 
 function retirerDuPanier(index) {
@@ -407,7 +415,7 @@ function afficherPanier() {
     if (panier.length === 0) {
         corps.innerHTML = `
             <tr>
-                <td colspan="6" class="px-6 py-10 text-center text-sm text-slate-400">
+                <td colspan="6" class="px-6 py-12 text-center text-sm text-slate-400">
                     Le panier est vide. Ajoutez des produits ci-dessus.
                 </td>
             </tr>`;
@@ -421,12 +429,12 @@ function afficherPanier() {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td class="px-6 py-3 font-mono text-xs text-slate-500"></td>
-            <td class="px-6 py-3 font-medium text-slate-900"></td>
-            <td class="px-6 py-3 tabular-nums">${formatPrix(ligne.prix)}</td>
-            <td class="px-6 py-3 tabular-nums">${Number(ligne.quantite)}</td>
-            <td class="px-6 py-3 tabular-nums">${formatPrix(sousTotal)}</td>
-            <td class="px-6 py-3 text-right">
+            <td class="px-6 py-4 font-mono text-xs text-slate-500"></td>
+            <td class="px-6 py-4 font-medium text-slate-900"></td>
+            <td class="px-6 py-4 tabular-nums">${formatPrix(ligne.prix)}</td>
+            <td class="px-6 py-4 tabular-nums">${Number(ligne.quantite)}</td>
+            <td class="px-6 py-4 tabular-nums">${formatPrix(sousTotal)}</td>
+            <td class="px-6 py-4 text-right">
                 <button type="button" class="text-sm text-slate-400 hover:text-red-600">Retirer</button>
             </td>`;
 

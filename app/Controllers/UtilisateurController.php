@@ -2,15 +2,21 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
-use App\Models\ClientModel;
+use App\Models\UtilisateurModel;
 
-class ClientController extends Controller
+/**
+ * Gestion des utilisateurs, réservée au gestionnaire.
+ *
+ * Depuis le passage à la table unique utilisateur, un client est un
+ * utilisateur de role 'client' : ces écrans ne listent donc que ceux-là.
+ */
+class UtilisateurController extends Controller
 {
-    private ClientModel $clientModel;
+    private UtilisateurModel $utilisateurModel;
 
     public function __construct()
     {
-        $this->clientModel = new ClientModel();
+        $this->utilisateurModel = new UtilisateurModel();
     }
 
     /**
@@ -21,8 +27,8 @@ class ClientController extends Controller
         $telephone = trim($_GET['telephone'] ?? '');
 
         $clients = $telephone !== ''
-            ? $this->clientModel->searchByTelephone($telephone)
-            : $this->clientModel->allOrdered();
+            ? $this->utilisateurModel->searchClientsByTelephone($telephone)
+            : $this->utilisateurModel->allClients();
 
         loadView('clients/index', [
             'title'     => 'Clients',
@@ -50,7 +56,7 @@ class ClientController extends Controller
     public function store(): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            redirectTo('client', 'create');
+            redirectTo('utilisateur', 'create');
         }
 
         $donnees = [
@@ -64,14 +70,15 @@ class ClientController extends Controller
         $errors = validDataClient($donnees);
 
         // Contrôles qui nécessitent la base : unicité du téléphone et de l'email.
-        if (!isset($errors['telephoneVide']) && $this->clientModel->findByTelephone($donnees['telephone'])) {
-            $errors['telephoneVide'] = 'Ce numéro est déjà utilisé par un autre client';
+        // Les deux sont uniques sur toute la table, gestionnaires compris.
+        if (!isset($errors['telephoneVide']) && $this->utilisateurModel->findByTelephone($donnees['telephone'])) {
+            $errors['telephoneVide'] = 'Ce numéro est déjà utilisé par un autre compte';
         }
 
         if (!isset($errors['email'])) {
             if (!filter_var($donnees['email'], FILTER_VALIDATE_EMAIL)) {
                 $errors['email'] = "L'adresse email n'est pas valide";
-            } elseif ($this->clientModel->findByEmail($donnees['email'])) {
+            } elseif ($this->utilisateurModel->findByEmail($donnees['email'])) {
                 $errors['email'] = 'Cette adresse email est déjà utilisée';
             }
         }
@@ -85,10 +92,10 @@ class ClientController extends Controller
             return;
         }
 
-        $this->clientModel->create($donnees);
+        $this->utilisateurModel->createClient($donnees);
 
         $this->setFlash('succes', "Le client {$donnees['prenom']} {$donnees['nom']} a été ajouté.");
-        redirectTo('client', 'index');
+        redirectTo('utilisateur', 'index');
     }
 
     /**
@@ -97,19 +104,22 @@ class ClientController extends Controller
     public function delete(): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            redirectTo('client', 'index');
+            redirectTo('utilisateur', 'index');
         }
 
         $id = (int) ($_POST['id'] ?? 0);
-        $client = $id > 0 ? $this->clientModel->find($id) : null;
+
+        // findClient() ne retourne rien pour un gestionnaire : cet écran ne
+        // peut donc pas servir à supprimer un compte de gestion.
+        $client = $id > 0 ? $this->utilisateurModel->findClient($id) : null;
 
         if (!$client) {
             $this->setFlash('erreur', 'Client introuvable.');
-            redirectTo('client', 'index');
+            redirectTo('utilisateur', 'index');
         }
 
         // La clé étrangère commande.client_id est en ON DELETE RESTRICT.
-        $nbCommandes = $this->clientModel->countCommandes($id);
+        $nbCommandes = $this->utilisateurModel->countCommandes($id);
 
         if ($nbCommandes > 0) {
             $this->setFlash(
@@ -117,14 +127,17 @@ class ClientController extends Controller
                 "Impossible de supprimer {$client->prenom} {$client->nom} : "
                 . "ce client a {$nbCommandes} commande(s) enregistrée(s)."
             );
-            redirectTo('client', 'index');
+            redirectTo('utilisateur', 'index');
         }
 
-        $this->clientModel->delete($id);
+        $this->utilisateurModel->deleteClient($id);
 
         $this->setFlash('succes', "Le client {$client->prenom} {$client->nom} a été supprimé.");
-        redirectTo('client', 'index');
+        redirectTo('utilisateur', 'index');
     }
+
+    // TODO (branche auth) : réserver ces écrans au gestionnaire avec
+    // auth() puis hasRole(UtilisateurModel::ROLE_GESTIONNAIRE).
 
     private function setFlash(string $type, string $message): void
     {

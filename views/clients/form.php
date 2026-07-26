@@ -3,14 +3,14 @@
 $ancien = fn(string $champ) => htmlspecialchars($donnees[$champ] ?? '');
 ?>
 
-<a href="<?= path('client', 'index') ?>" class="text-sm text-slate-500 hover:text-slate-900">
+<a href="<?= path('utilisateur','index') ?>" class="text-sm text-slate-500 hover:text-slate-900">
     &larr; Retour à la liste
 </a>
 
 <h1 class="mt-4 text-xl font-semibold tracking-tight text-slate-900">Nouveau client</h1>
 <p class="mt-1 text-sm text-slate-500">Tous les champs sont obligatoires.</p>
 
-<form method="post" action="<?= path('client', 'store') ?>" class="mt-8 max-w-lg space-y-5">
+<form method="post" action="<?= path('utilisateur','store') ?>" class="mt-8 max-w-lg space-y-5">
 
     <div>
         <label for="nom" class="block text-sm font-medium text-slate-700">Nom</label>
@@ -69,7 +69,7 @@ $ancien = fn(string $champ) => htmlspecialchars($donnees[$champ] ?? '');
                 class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
             Enregistrer
         </button>
-        <a href="<?= path('client', 'index') ?>" class="text-sm text-slate-500 hover:text-slate-900">
+        <a href="<?= path('utilisateur','index') ?>" class="text-sm text-slate-500 hover:text-slate-900">
             Annuler
         </a>
     </div>

@@ -7,7 +7,7 @@
         </p>
     </div>
 
-    <a href="<?= path('client', 'create') ?>"
+    <a href="<?= path('utilisateur','create') ?>"
        class="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700">
         Ajouter un client
     </a>
@@ -22,7 +22,7 @@
     </div>
 <?php endif; ?>
 
-<form method="get" action="<?= path('client', 'index') ?>" class="mt-6 flex gap-2">
+<form method="get" action="<?= path('utilisateur','index') ?>" class="mt-6 flex gap-2">
     <input type="text"
            name="telephone"
            value="<?= htmlspecialchars($telephone) ?>"
@@ -36,7 +36,7 @@
     </button>
 
     <?php if ($telephone !== ''): ?>
-        <a href="<?= path('client', 'index') ?>" class="self-center text-sm text-slate-500 hover:text-slate-900">
+        <a href="<?= path('utilisateur','index') ?>" class="self-center text-sm text-slate-500 hover:text-slate-900">
             Réinitialiser
         </a>
     <?php endif; ?>
@@ -72,7 +72,7 @@
                         <td class="px-4 py-3 text-slate-500"><?= htmlspecialchars($client->email) ?></td>
                         <td class="px-4 py-3 text-right">
                             <form method="post"
-                                  action="<?= path('client', 'delete') ?>"
+                                  action="<?= path('utilisateur','delete') ?>"
                                   onsubmit="return confirm('Supprimer définitivement ce client ?');">
                                 <input type="hidden" name="id" value="<?= (int) $client->id ?>">
                                 <button type="submit" class="text-sm text-slate-500 hover:text-red-600">

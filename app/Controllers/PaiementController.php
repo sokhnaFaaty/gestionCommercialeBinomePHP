@@ -48,11 +48,14 @@ class PaiementController extends Controller
             exit;
         }
 
-        loadView('paiements/form', [
-            'title'   => 'Enregistrer un paiement',
-            'facture' => $facture,
-            'donnees' => [],
-            'errors'  => [],
+        // Modifié : charge 'paiements/index' et fournit un tableau de paiements vide
+        loadView('paiements/index', [
+            'title'     => 'Enregistrer un paiement',
+            'facture'   => $facture,
+            'paiements' => [], 
+            'donnees'   => [],
+            'errors'    => [],
+            'flash'     => $this->getFlash(),
         ]);
     }
 
@@ -83,11 +86,14 @@ class PaiementController extends Controller
         }
 
         if ($errors) {
-            loadView('paiements/form', [
-                'title'   => 'Enregistrer un paiement',
-                'facture' => $facture,
-                'donnees' => $donnees,
-                'errors'  => $errors,
+            // Modifié : charge 'paiements/index' en cas d'erreur de saisie
+            loadView('paiements/index', [
+                'title'     => 'Enregistrer un paiement',
+                'facture'   => $facture,
+                'paiements' => [],
+                'donnees'   => $donnees,
+                'errors'    => $errors,
+                'flash'     => $this->getFlash(),
             ]);
             return;
         }

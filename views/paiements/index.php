@@ -57,42 +57,47 @@
 
 <?php endif; ?>
 
+<!-- SÉCURITÉ : On affiche le formulaire d'ajout uniquement si une facture est présente -->
+<?php if (isset($facture) && is_object($facture)): ?>
 
-<?php $resteDu = (float) $facture->montant - (float) $facture->montant_paye; ?>
+    <?php $resteDu = (float) $facture->montant - (float) $facture->montant_paye; ?>
 
-<a href="<?= WEBROOT . 'facture/show/' . (int) $facture->id ?>" class="text-sm text-slate-500 hover:text-slate-900">
-    &larr; Retour à la facture
-</a>
-
-<h1 class="mt-4 text-xl font-semibold tracking-tight text-slate-900">Enregistrer un paiement</h1>
-<p class="mt-1 text-sm text-slate-500">
-    Facture <?= htmlspecialchars($facture->numero) ?> -- reste dû : <strong><?= formatPrix($resteDu) ?></strong>
-</p>
-
-<form method="post" action="<?= path('paiement','store') ?>" class="mt-8 max-w-sm space-y-5">
-
-    <input type="hidden" name="facture_id" value="<?= (int) $facture->id ?>">
-
-    <div>
-        <label for="montant_verse" class="block text-sm font-medium text-slate-700">Montant versé</label>
-        <input type="text" id="montant_verse" name="montant_verse"
-               value="<?= htmlspecialchars($donnees['montant_verse'] ?? '') ?>"
-               class="mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none
-                      <?= isset($errors['montant_verse']) ? 'border-red-400 focus:border-red-500' : 'border-slate-300 focus:border-slate-900' ?>">
-        <?php if (isset($errors['montant_verse'])): ?>
-            <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($errors['montant_verse']) ?></p>
-        <?php endif; ?>
-    </div>
-
-    <div class="flex items-center gap-3 pt-2">
-        <button type="submit"
-                class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
-            Enregistrer
-        </button>
+    <div class="mt-10 border-t border-slate-200 pt-6">
         <a href="<?= WEBROOT . 'facture/show/' . (int) $facture->id ?>" class="text-sm text-slate-500 hover:text-slate-900">
-            Annuler
+            &larr; Retour à la facture
         </a>
+
+        <h1 class="mt-4 text-xl font-semibold tracking-tight text-slate-900">Enregistrer un paiement</h1>
+        <p class="mt-1 text-sm text-slate-500">
+            Facture <?= htmlspecialchars($facture->numero) ?> -- reste dû : <strong><?= formatPrix($resteDu) ?></strong>
+        </p>
+
+        <form method="post" action="<?= path('paiement','store') ?>" class="mt-8 max-w-sm space-y-5">
+
+            <input type="hidden" name="facture_id" value="<?= (int) $facture->id ?>">
+
+            <div>
+                <label for="montant_verse" class="block text-sm font-medium text-slate-700">Montant versé</label>
+                <input type="text" id="montant_verse" name="montant_verse"
+                    value="<?= htmlspecialchars($donnees['montant_verse'] ?? '') ?>"
+                    class="mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none
+                            <?= isset($errors['montant_verse']) ? 'border-red-400 focus:border-red-500' : 'border-slate-300 focus:border-slate-900' ?>">
+                <?php if (isset($errors['montant_verse'])): ?>
+                    <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($errors['montant_verse']) ?></p>
+                <?php endif; ?>
+            </div>
+
+            <div class="flex items-center gap-3 pt-2">
+                <button type="submit"
+                        class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
+                    Enregistrer
+                </button>
+                <a href="<?= WEBROOT . 'facture/show/' . (int) $facture->id ?>" class="text-sm text-slate-500 hover:text-slate-900">
+                    Annuler
+                </a>
+            </div>
+
+        </form>
     </div>
 
-</form>
-
+<?php endif; ?>

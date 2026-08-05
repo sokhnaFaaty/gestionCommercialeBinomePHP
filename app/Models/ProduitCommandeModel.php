@@ -5,7 +5,7 @@ use App\Core\Model;
 
 class ProduitCommandeModel extends Model
 {
-    protected $table = 'produit_commande';
+    protected $table = 'ligne_commande';
 
     /**
      * Lignes d'une commande donnée, avec les informations du produit.

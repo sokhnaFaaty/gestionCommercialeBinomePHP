@@ -93,7 +93,6 @@ class CommandeController extends Controller
 
         $donnees = [
             'telephone'   => trim($_POST['telephone'] ?? ''),
-            'description' => trim($_POST['description'] ?? ''),
             'lignes'      => $_POST['lignes'] ?? [],
         ];
 
@@ -123,8 +122,7 @@ class CommandeController extends Controller
 
         $commandeId = $this->commandeModel->createCommande(
             (int) $client->id,
-            $lignesValidees,
-            $donnees['description']
+            $lignesValidees
         );
         $commande   = $this->commandeModel->findCommande($commandeId);
 
@@ -166,7 +164,6 @@ class CommandeController extends Controller
             'commande' => $commande,
             'donnees'  => [
                 'telephone'   => $commande->client_telephone,
-                'description' => $commande->description,
                 'lignes'      => $lignes,
             ],
             'errors'   => [],
@@ -196,7 +193,6 @@ class CommandeController extends Controller
 
         $donnees = [
             'telephone'   => trim($_POST['telephone'] ?? ''),
-            'description' => trim($_POST['description'] ?? ''),
             'lignes'      => $_POST['lignes'] ?? [],
         ];
 
@@ -233,7 +229,6 @@ class CommandeController extends Controller
             $id,
             (int) $client->id,
             $lignesValidees,
-            $donnees['description']
         );
 
         $this->setFlash('succes', "La commande {$commande->numero} a été modifiée.");

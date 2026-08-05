@@ -4,8 +4,9 @@
 // retour dépend donc de qui l'affiche. Par défaut, la liste du gestionnaire.
 $retour = isset($retour) ? $retour : path('commande','index');
 
-// La facture n'est pas encore gérée par les controllers : tant qu'ils ne la
-// passent pas, on considère qu'il n'y en a pas.
+// L'espace client n'affiche pas de facture : il ne la passe pas, on considère
+// alors qu'il n'y en a pas (le bloc facture est de toute façon réservé au
+// gestionnaire, plus bas).
 $facture = isset($facture) ? $facture : null;
 ?>
 <a href="<?= $retour ?>" class="text-sm text-slate-500 hover:text-slate-900">

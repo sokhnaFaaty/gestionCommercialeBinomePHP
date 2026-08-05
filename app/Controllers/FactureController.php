@@ -1,102 +1,152 @@
 <?php
-namespace App\Models;
+namespace App\Controllers;
 
-use App\Core\Model;
+use App\Core\Controller;
+use App\Models\FactureModel;
+use App\Models\CommandeModel;
+use App\Models\PaiementModel;
+use App\Models\ProduitCommandeModel;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
-class FactureModel extends Model
+class FactureController extends Controller
 {
-    protected $table = 'facture';
+    private FactureModel $factureModel;
+    private CommandeModel $commandeModel;
+    private PaiementModel $paiementModel;
 
-    /**
-     * Le statut n'est pas stocké sur la facture : il est recalculé à partir
-     * de la somme des paiements reçus, comparée au montant de la facture.
-     * Les valeurs renvoyées correspondent exactement à l'enum type_statut_paiement.
-     */
-    private const SELECT_AVEC_STATUT = "
-        SELECT f.*,
-               c.numero AS commande_numero,
-               u.id AS client_id, u.nom AS client_nom, u.prenom AS client_prenom,
-               COALESCE(p.paye, 0) AS montant_paye,
-               CASE
-                   WHEN COALESCE(p.paye, 0) = 0 THEN 'non payee'
-                   WHEN COALESCE(p.paye, 0) < f.montant THEN 'partiellement_payee'
-                   ELSE 'totalement_payee'
-               END AS statut
-        FROM facture f
-        JOIN commande c ON c.id = f.commande_id
-        JOIN utilisateur u ON u.id = c.client_id
-        LEFT JOIN (
-            SELECT facture_id, SUM(montant_verse) AS paye
-            FROM paiement
-            GROUP BY facture_id
-        ) p ON p.facture_id = f.id
-    ";
-
-    /**
-     * Cas d'utilisation « afficher tous les factures ».
-     */
-    public function allFactures(): array
+    public function __construct()
     {
-        return $this->executeSelect(self::SELECT_AVEC_STATUT . " ORDER BY f.date DESC, f.id DESC");
+        authGestionnaire();
+
+        $this->factureModel  = new FactureModel();
+        $this->commandeModel = new CommandeModel();
+        $this->paiementModel = new PaiementModel();
     }
 
     /**
-     * Cas d'utilisation « afficher les factures impayées / soldées ».
-     * $statut attend une des valeurs de type_statut_paiement.
+     * Cas d'utilisation « lister factures », avec les variantes
+     * impayées / soldées / toutes (paramètre ?statut=...).
      */
-    public function allFacturesByStatut(string $statut): array
+    public function index(): void
     {
-        $sql = "SELECT * FROM (" . self::SELECT_AVEC_STATUT . ") AS f
-                WHERE statut = ?
-                ORDER BY date DESC, id DESC";
+        $statut = $_GET['statut'] ?? 'toutes';
 
-        return $this->executeSelect($sql, [$statut]);
-    }
+        $factures = match ($statut) {
+            'impayees' => $this->factureModel->allFacturesByStatut('non payee'),
+            'soldees'  => $this->factureModel->allFacturesByStatut('totalement_payee'),
+            default    => $this->factureModel->allFactures(),
+        };
 
-    public function findFacture(int $id)
-    {
-        return $this->executeSelectOne(self::SELECT_AVEC_STATUT . " WHERE f.id = ?", [$id]);
-    }
-
-    /**
-     * facture.commande_id est UNIQUE : sert à vérifier qu'une commande n'a
-     * pas déjà sa facture avant d'en générer une nouvelle.
-     */
-    public function findByCommande(int $commandeId)
-    {
-        return $this->executeSelectOne(
-            "SELECT * FROM {$this->table} WHERE commande_id = ?",
-            [$commandeId]
-        );
+        loadView('factures/index', [
+            'title'    => 'Factures',
+            'factures' => $factures,
+            'statut'   => $statut,
+            'flash'    => $this->getFlash(),
+        ]);
     }
 
     /**
-     * Génère la facture d'une commande. Le montant reprend toujours
-     * commande.montant_total (voir FactureController::store()).
+     * Détail d'une facture + ses paiements.
      */
-    public function createFacture(int $commandeId, float $montant): int
+    public function show(int $id): void
     {
-        // numero est NOT NULL : impossible d'insérer puis de numéroter après
-        // coup. On demande l'id à la séquence avant l'insertion, comme pour
-        // commande.numero (voir CommandeModel::createCommande()).
-        $suivant = $this->executeSelectOne(
-            "SELECT nextval(pg_get_serial_sequence('{$this->table}', 'id')) AS id"
-        );
+        $facture = $this->factureModel->findFacture($id);
 
-        $factureId = (int) $suivant->id;
-        $numero    = 'FACT-' . str_pad((string) $factureId, 6, '0', STR_PAD_LEFT);
+        if (!$facture) {
+            $this->setFlash('erreur', 'Facture introuvable.');
+            redirectTo('facture', 'index');
+        }
 
-        $this->executeUpdate(
-            "INSERT INTO {$this->table} (id, numero, date, montant, commande_id)
-             VALUES (:id, :numero, CURRENT_DATE, :montant, :commande_id)",
-            [
-                'id'          => $factureId,
-                'numero'      => $numero,
-                'montant'     => $montant,
-                'commande_id' => $commandeId,
-            ]
-        );
+        loadView('factures/show', [
+            'title'     => 'Facture ' . $facture->numero,
+            'facture'   => $facture,
+            'paiements' => $this->paiementModel->findByFacture($id),
+            'flash'     => $this->getFlash(),
+        ]);
+    }
 
-        return $factureId;
+    /**
+     * Génère la facture d'une commande (bouton sur commande/show).
+     * Le montant reprend toujours commande.montant_total.
+     */
+    public function store(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirectTo('commande', 'index');
+        }
+
+        $commandeId = (int) ($_POST['commande_id'] ?? 0);
+        $commande   = $commandeId > 0 ? $this->commandeModel->findCommande($commandeId) : null;
+
+        if (!$commande) {
+            $this->setFlash('erreur', 'Commande introuvable.');
+            redirectTo('commande', 'index');
+        }
+
+        // facture.commande_id est UNIQUE : une commande n'a jamais deux factures.
+        if ($this->factureModel->findByCommande($commandeId)) {
+            $this->setFlash('erreur', 'Cette commande a déjà une facture.');
+            header('Location: ' . WEBROOT . 'commande/show/' . $commandeId);
+            exit;
+        }
+
+        $factureId = $this->factureModel->createFacture($commandeId, (float) $commande->montant_total);
+
+        $this->setFlash('succes', 'La facture a été générée.');
+        header('Location: ' . WEBROOT . 'facture/show/' . $factureId);
+        exit;
+    }
+
+    /**
+     * Télécharge la facture au format PDF (« enregistrer sur l'ordinateur »).
+     */
+    public function pdf(int $id): void
+    {
+        $facture = $this->factureModel->findFacture($id);
+
+        if (!$facture) {
+            $this->setFlash('erreur', 'Facture introuvable.');
+            redirectTo('facture', 'index');
+        }
+
+        $produitCommandeModel = new ProduitCommandeModel();
+
+        $lignes    = $produitCommandeModel->findByCommande((int) $facture->commande_id);
+        $paiements = $this->paiementModel->findByFacture($id);
+
+        // Rendu à partir d'une vue HTML dédiée (pas le layout Tailwind : Dompdf
+        // ne charge pas le CDN externe), capturée dans un buffer.
+        ob_start();
+        require ROOT . 'views/factures/pdf.php';
+        $html = ob_get_clean();
+
+        $options = new Options();
+        $options->set('isRemoteEnabled', false);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $dompdf->stream($facture->numero . '.pdf', ['Attachment' => true]);
+        exit;
+    }
+
+    private function setFlash(string $type, string $message): void
+    {
+        $_SESSION['flash'] = ['type' => $type, 'message' => $message];
+    }
+
+    private function getFlash(): ?array
+    {
+        if (!isset($_SESSION['flash'])) {
+            return null;
+        }
+
+        $flash = $_SESSION['flash'];
+        unset($_SESSION['flash']);
+
+        return $flash;
     }
 }

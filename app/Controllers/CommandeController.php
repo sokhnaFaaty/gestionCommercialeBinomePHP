@@ -3,6 +3,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\CommandeModel;
+use App\Models\FactureModel;
 use App\Models\ProduitCommandeModel;
 use App\Models\ProduitModel;
 use App\Models\UtilisateurModel;
@@ -19,6 +20,7 @@ class CommandeController extends Controller
     private CommandeModel $commandeModel;
     private ProduitCommandeModel $produitCommandeModel;
     private UtilisateurModel $utilisateurModel;
+    private FactureModel $factureModel;
 
     public function __construct()
     {
@@ -30,6 +32,7 @@ class CommandeController extends Controller
         $this->commandeModel        = new CommandeModel();
         $this->produitCommandeModel = new ProduitCommandeModel();
         $this->utilisateurModel     = new UtilisateurModel();
+        $this->factureModel         = new FactureModel();
     }
 
     /**
@@ -60,6 +63,9 @@ class CommandeController extends Controller
             'title'    => 'Commande ' . $commande->numero,
             'commande' => $commande,
             'lignes'   => $this->produitCommandeModel->findByCommande($id),
+            // null s'il n'y en a pas encore : la vue affiche alors le bouton
+            // « Générer la facture » au lieu de « Voir la facture ».
+            'facture'  => $this->factureModel->findByCommande($id) ?: null,
         ]);
     }
 

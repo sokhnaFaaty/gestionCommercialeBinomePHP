@@ -16,6 +16,8 @@ use App\Controllers\AuthController;
 use App\Controllers\CategorieController;
 use App\Controllers\CommandeController;
 use App\Controllers\EspaceClientController;
+use App\Controllers\FactureController;
+use App\Controllers\PaiementController;
 use App\Controllers\ProduitController;
 use App\Controllers\UtilisateurController;
 

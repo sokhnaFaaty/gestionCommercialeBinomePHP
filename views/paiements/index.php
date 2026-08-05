@@ -58,7 +58,6 @@
 <?php endif; ?>
 
 
-11. views/paiements/form.php
 <?php $resteDu = (float) $facture->montant - (float) $facture->montant_paye; ?>
 
 <a href="<?= WEBROOT . 'facture/show/' . (int) $facture->id ?>" class="text-sm text-slate-500 hover:text-slate-900">

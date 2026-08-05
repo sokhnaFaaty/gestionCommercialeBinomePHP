@@ -50,7 +50,7 @@ class CommandeModel extends Model
      * @param array $lignes Tableau de ['produit' => object produit, 'quantite' => int]
      *                      Déjà validés par le controller avant l'appel.
      */
-    public function createCommande(int $clientId, array $lignes, string $description = ''): int
+    public function createCommande(int $clientId, array $lignes): int
     {
         $this->db->beginTransaction();
 
@@ -58,11 +58,6 @@ class CommandeModel extends Model
             // La colonne numero est NOT NULL : impossible d'insérer la commande
             // puis de la numéroter après coup. Or le numéro est construit à
             // partir de l'id... que PostgreSQL n'attribue qu'à l'insertion.
-            //
-            // On demande donc à la séquence le prochain id AVANT d'insérer
-            // (nextval), ce qui permet de fournir l'id et le numéro d'un seul
-            // coup. pg_get_serial_sequence() retrouve le nom de la séquence
-            // associée à commande.id, sans avoir à l'écrire en dur.
             $suivant = $this->executeSelectOne(
                 "SELECT nextval(pg_get_serial_sequence('{$this->table}', 'id')) AS id"
             );
@@ -71,15 +66,12 @@ class CommandeModel extends Model
             $numero     = 'CMD-' . str_pad((string) $commandeId, 6, '0', STR_PAD_LEFT);
 
             $this->executeUpdate(
-                "INSERT INTO {$this->table} (id, numero, date, montant_total, validee, description, client_id)
-                 VALUES (:id, :numero, CURRENT_DATE, 0, false, :description, :client_id)",
+                "INSERT INTO {$this->table} (id, numero, date, montant_total, validee, client_id)
+                 VALUES (:id, :numero, CURRENT_DATE, 0, false, :client_id)",
                 [
-                    'id'          => $commandeId,
-                    'numero'      => $numero,
-                    // Champ facultatif : on enregistre NULL plutôt qu'une chaîne
-                    // vide, c'est plus juste et plus simple à tester ensuite.
-                    'description' => $description !== '' ? $description : null,
-                    'client_id'   => $clientId,
+                    'id'        => $commandeId,
+                    'numero'    => $numero,
+                    'client_id' => $clientId,
                 ]
             );
 
@@ -121,20 +113,8 @@ class CommandeModel extends Model
 
     /**
      * Cas d'utilisation « modifier commande ».
-     *
-     * Le contenu de la commande est entièrement remplacé. En trois temps :
-     *   1. on rend au stock ce que les anciennes lignes avaient pris ;
-     *   2. on supprime ces anciennes lignes ;
-     *   3. on enregistre les nouvelles, exactement comme à la création.
-     *
-     * Le tout dans une transaction : si une étape échoue, rollBack() ramène la
-     * base à son état de départ. Sans ça, on pourrait se retrouver avec du
-     * stock rendu mais des lignes toujours présentes.
-     *
-     * @param array $lignes Tableau de ['produit' => object produit, 'quantite' => int]
-     *                      Déjà validés par le controller avant l'appel.
      */
-    public function updateCommande(int $commandeId, int $clientId, array $lignes, string $description = ''): bool
+    public function updateCommande(int $commandeId, int $clientId, array $lignes): bool
     {
         $this->db->beginTransaction();
 
@@ -163,8 +143,6 @@ class CommandeModel extends Model
 
                 $produitCommandeModel->create($commandeId, $produit->id, $quantite, $prix);
 
-                // Attention : $produit->qte_stock a été lu AVANT l'étape 1.
-                // On relit donc le stock à jour avant de le décrémenter.
                 $produitAJour = $produitModel->findByReference($produit->reference);
                 $produitModel->updateStock($produit->id, (int) $produitAJour->qte_stock - $quantite);
 
@@ -173,13 +151,12 @@ class CommandeModel extends Model
 
             $this->executeUpdate(
                 "UPDATE {$this->table}
-                 SET montant_total = :montant, client_id = :client_id, description = :description
+                 SET montant_total = :montant, client_id = :client_id
                  WHERE id = :id",
                 [
-                    'montant'     => $montantTotal,
-                    'client_id'   => $clientId,
-                    'description' => $description !== '' ? $description : null,
-                    'id'          => $commandeId,
+                    'montant'   => $montantTotal,
+                    'client_id' => $clientId,
+                    'id'        => $commandeId,
                 ]
             );
 
@@ -193,8 +170,7 @@ class CommandeModel extends Model
     }
 
     /**
-     * facture.commande_id est UNIQUE + ON DELETE RESTRICT : on vérifie qu'aucune
-     * facture n'est rattachée avant de permettre la suppression de la commande.
+     * facture.commande_id est UNIQUE + ON DELETE RESTRICT
      */
     public function countFactures(int $commandeId): int
     {
@@ -208,7 +184,6 @@ class CommandeModel extends Model
 
     /**
      * Cas d'utilisation « supprimer commande ».
-     * Les lignes produit_commande sont supprimées automatiquement (ON DELETE CASCADE).
      */
     public function deleteCommande(int $id): bool
     {

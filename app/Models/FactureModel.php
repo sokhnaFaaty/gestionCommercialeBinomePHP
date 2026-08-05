@@ -30,11 +30,15 @@ class FactureModel extends Model
                        u.nom    AS client_nom,
                        u.prenom AS client_prenom,
                        COALESCE(v.total, 0) AS montant_paye,
-                       CASE
+                       -- Le cast vers l'énumération n'est pas décoratif : si un
+                       -- de ces trois libellés était mal orthographié,
+                       -- PostgreSQL refuserait la requête au lieu de renvoyer
+                       -- un statut que les vues ne sauraient pas afficher.
+                       (CASE
                            WHEN COALESCE(v.total, 0) <= 0         THEN 'non payee'
                            WHEN COALESCE(v.total, 0) >= f.montant THEN 'totalement_payee'
                            ELSE 'partiellement_payee'
-                       END AS statut
+                       END)::type_statut_facture AS statut
                 FROM {$this->table} f
                 JOIN commande c    ON c.id = f.commande_id
                 JOIN utilisateur u ON u.id = c.client_id

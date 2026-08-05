@@ -46,10 +46,12 @@ class PaiementModel extends Model
 
     /**
      * Cas d'utilisation « enregistrer un paiement ».
-     * Le statut enregistré sur CE paiement reflète l'état de la facture
-     * après ce versement (paiement partiel ou soldant la facture).
+     *
+     * On n'enregistre que le versement lui-même. Le statut de la facture
+     * (partiellement / totalement payée) n'est pas écrit ici : FactureModel
+     * le recalcule à partir de la somme des paiements à chaque lecture.
      */
-    public function createPaiement(int $factureId, float $montantVerse, float $montantFacture): int
+    public function createPaiement(int $factureId, float $montantVerse): int
     {
         $suivant = $this->executeSelectOne(
             "SELECT nextval(pg_get_serial_sequence('{$this->table}', 'id')) AS id"
@@ -58,17 +60,13 @@ class PaiementModel extends Model
         $paiementId = (int) $suivant->id;
         $numero     = 'PAI-' . str_pad((string) $paiementId, 6, '0', STR_PAD_LEFT);
 
-        $nouveauTotal = $this->totalPaye($factureId) + $montantVerse;
-        $statut       = $nouveauTotal >= $montantFacture ? 'totalement_payee' : 'partiellement_payee';
-
         $this->executeUpdate(
-            "INSERT INTO {$this->table} (id, numero, montant_verse, date, statut, facture_id)
-             VALUES (:id, :numero, :montant_verse, CURRENT_DATE, :statut, :facture_id)",
+            "INSERT INTO {$this->table} (id, numero, montant_verse, date, facture_id)
+             VALUES (:id, :numero, :montant_verse, CURRENT_DATE, :facture_id)",
             [
                 'id'            => $paiementId,
                 'numero'        => $numero,
                 'montant_verse' => $montantVerse,
-                'statut'        => $statut,
                 'facture_id'    => $factureId,
             ]
         );

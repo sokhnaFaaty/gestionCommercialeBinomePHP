@@ -92,11 +92,7 @@ class PaiementController extends Controller
             return;
         }
 
-        $this->paiementModel->createPaiement(
-            $factureId,
-            (float) $donnees['montant_verse'],
-            (float) $facture->montant
-        );
+        $this->paiementModel->createPaiement($factureId, (float) $donnees['montant_verse']);
 
         $this->setFlash('succes', 'Le paiement a été enregistré.');
         header('Location: ' . WEBROOT . 'facture/show/' . $factureId);

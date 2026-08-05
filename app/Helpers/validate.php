@@ -135,3 +135,16 @@ function validDataCategorie(array $data): array
 
     return $errors;
 }
+
+function validDataPaiement(array $data): array
+{
+    $errors = [];
+
+    if ($data['montant_verse'] === '' || $data['montant_verse'] === null) {
+        $errors['montant_verse'] = 'Veuillez saisir un montant';
+    } elseif (!is_numeric($data['montant_verse']) || (float) $data['montant_verse'] <= 0) {
+        $errors['montant_verse'] = 'Le montant doit être un nombre positif';
+    }
+
+    return $errors;
+}

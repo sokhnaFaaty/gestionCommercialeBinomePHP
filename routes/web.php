@@ -80,11 +80,14 @@ function routes(): array
         'POST categorie/update'    => [CategorieController::class, 'update'],
         'POST categorie/delete'    => [CategorieController::class, 'delete'],
 
-        // --- À décommenter au fur et à mesure que les écrans sont écrits ---
-        // (penser à ajouter le « use App\Controllers\XxxController; » en haut)
-        //
-        // 'GET facture/index'    => [FactureController::class, 'index'],
-        // 'GET paiement/index'   => [PaiementController::class, 'index'],
+       'GET facture/index'      => [FactureController::class, 'index'],
+'GET facture/show/{id}'  => [FactureController::class, 'show'],
+'POST facture/store'     => [FactureController::class, 'store'],
+'GET facture/pdf/{id}'   => [FactureController::class, 'pdf'],
+
+'GET paiement/index'         => [PaiementController::class, 'index'],
+'GET paiement/create/{id}'   => [PaiementController::class, 'create'],
+'POST paiement/store'        => [PaiementController::class, 'store'],
     ];
 }
 

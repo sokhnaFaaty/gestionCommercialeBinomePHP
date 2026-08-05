@@ -3,6 +3,10 @@
 // Cette vue sert au gestionnaire ET au client (espace client) : le lien de
 // retour dépend donc de qui l'affiche. Par défaut, la liste du gestionnaire.
 $retour = isset($retour) ? $retour : path('commande','index');
+
+// La facture n'est pas encore gérée par les controllers : tant qu'ils ne la
+// passent pas, on considère qu'il n'y en a pas.
+$facture = isset($facture) ? $facture : null;
 ?>
 <a href="<?= $retour ?>" class="text-sm text-slate-500 hover:text-slate-900">
     &larr; Retour à la liste
@@ -76,4 +80,22 @@ $retour = isset($retour) ? $retour : path('commande','index');
             </tr>
         </tfoot>
     </table>
+    <?php if (hasRole(ROLE_GESTIONNAIRE)): ?>
+    <div class="mt-6">
+        <?php if ($facture): ?>
+            <a href="<?= WEBROOT . 'facture/show/' . (int) $facture->id ?>"
+               class="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                Voir la facture
+            </a>
+        <?php else: ?>
+            <form method="post" action="<?= path('facture','store') ?>">
+                <input type="hidden" name="commande_id" value="<?= (int) $commande->id ?>">
+                <button type="submit"
+                        class="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700">
+                    Générer la facture
+                </button>
+            </form>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
 </div>

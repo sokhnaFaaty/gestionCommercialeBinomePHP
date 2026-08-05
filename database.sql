@@ -12,15 +12,11 @@ DROP TABLE IF EXISTS categorie CASCADE;
 DROP TABLE IF EXISTS utilisateur CASCADE;
 DROP TABLE IF EXISTS client CASCADE;
 
-DROP TYPE IF EXISTS type_statut_facture CASCADE;
 DROP TYPE IF EXISTS type_statut_paiement CASCADE;
 DROP TYPE IF EXISTS type_statut_produit CASCADE;
 
 -- 1. Énumérations
--- Ce statut décrit une FACTURE, pas un paiement : un paiement, lui, est
--- simplement un versement d'un montant à une date. C'est la facture qui est
--- « non payée », « partiellement payée » ou « totalement payée ».
-CREATE TYPE type_statut_facture AS ENUM ('non payee', 'partiellement_payee', 'totalement_payee');
+CREATE TYPE type_statut_paiement AS ENUM ('partiellement_payee', 'totalement_payee', 'non payee');
 CREATE TYPE type_statut_produit AS ENUM ('disponible', 'rupture');
 
 -- 2. Tables (dans l'ordre des dépendances)
@@ -62,11 +58,6 @@ CREATE TABLE commande (
     client_id INT NOT NULL REFERENCES utilisateur(id) ON DELETE RESTRICT
 );
 
--- Le statut de la facture (type_statut_facture) n'est PAS stocké ici : il se
--- déduit de la somme des paiements reçus, et FactureModel le recalcule à
--- chaque lecture. Le stocker obligerait à le mettre à jour à chaque
--- encaissement, et le moindre oubli afficherait une facture « soldée » qui ne
--- l'est pas. Une donnée qui se calcule ne se duplique pas.
 CREATE TABLE facture (
     id SERIAL PRIMARY KEY,
     numero VARCHAR(50) NOT NULL UNIQUE,
@@ -75,12 +66,12 @@ CREATE TABLE facture (
     commande_id INT NOT NULL UNIQUE REFERENCES commande(id) ON DELETE CASCADE
 );
 
--- Un paiement n'a pas de statut : c'est un versement, il a eu lieu ou non.
 CREATE TABLE paiement (
     id SERIAL PRIMARY KEY,
     numero VARCHAR(50) NOT NULL UNIQUE,
-    montant_verse NUMERIC(10, 2) NOT NULL CHECK (montant_verse > 0),
+    montant_verse NUMERIC(10, 2) NOT NULL,
     date DATE NOT NULL DEFAULT CURRENT_DATE,
+    statut type_statut_paiement NOT NULL DEFAULT 'non payee',
     facture_id INT NOT NULL REFERENCES facture(id) ON DELETE CASCADE
 );
 

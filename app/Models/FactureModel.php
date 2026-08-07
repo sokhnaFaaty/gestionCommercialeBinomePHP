@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use App\Core\Model;
@@ -34,11 +35,11 @@ class FactureModel extends Model
                        -- de ces trois libellés était mal orthographié,
                        -- PostgreSQL refuserait la requête au lieu de renvoyer
                        -- un statut que les vues ne sauraient pas afficher.
-                       (CASE
-                           WHEN COALESCE(v.total, 0) <= 0         THEN 'non payee'
-                           WHEN COALESCE(v.total, 0) >= f.montant THEN 'totalement_payee'
-                           ELSE 'partiellement_payee'
-                       END)::type_statut_facture AS statut
+                      (CASE
+    WHEN COALESCE(v.total, 0) <= 0         THEN 'non payee'
+    WHEN COALESCE(v.total, 0) >= f.montant THEN 'totalement_payee'
+    ELSE 'partiellement_payee'
+END) AS statut
                 FROM {$this->table} f
                 JOIN commande c    ON c.id = f.commande_id
                 JOIN utilisateur u ON u.id = c.client_id
